@@ -1,8 +1,48 @@
 import { Router, type IRouter } from "express";
 import healthRouter from "./health";
+import authRouter from "./auth";
+import profileRouter from "./profile";
+import trustRouter from "./trust";
+import feedRouter from "./feed";
+import marketplaceRouter from "./marketplace";
+import servicesRouter from "./services";
+import jobsRouter from "./jobs";
+import coursesRouter from "./courses";
+import chatRouter from "./chat";
+import walletRouter from "./wallet";
+import escrowRouter from "./escrow";
+import companyRouter from "./company";
+import verificationRouter from "./verification";
+import deliveryRouter from "./delivery";
+import aiRouter from "./ai";
+import notificationsRouter from "./notifications";
+import governanceRouter from "./governance";
+import adminRouter from "./admin";
+import analyticsRouter from "./analytics";
+import settingsRouter from "./settings";
 
 const router: IRouter = Router();
 
 router.use(healthRouter);
+router.use("/auth", authRouter);
+router.use("/profiles", profileRouter);
+router.use("/trust", trustRouter);
+router.use("/feed", feedRouter);
+router.use("/marketplace", marketplaceRouter);
+router.use("/services", servicesRouter);
+router.use("/jobs", jobsRouter);
+router.use("/courses", coursesRouter);
+router.use("/chat", chatRouter);
+router.use("/wallet", walletRouter);
+router.use("/escrow", escrowRouter);
+router.use("/companies", companyRouter);
+router.use("/verification", verificationRouter);
+router.use("/delivery", deliveryRouter);
+router.use("/ai", aiRouter);
+router.use("/notifications", notificationsRouter);
+router.use("/governance", governanceRouter);
+router.use("/admin", adminRouter);
+router.use("/analytics", analyticsRouter);
+router.use("/settings", settingsRouter);
 
 export default router;

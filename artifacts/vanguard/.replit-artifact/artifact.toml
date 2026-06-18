@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Vanguard"
+version = "1.0.0"
+id = "artifacts/vanguard"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 24130
+
+[services.development]
+run = "pnpm --filter @workspace/vanguard run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/vanguard", "run", "build" ]
+publicDir = "artifacts/vanguard/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "24130"
+BASE_PATH = "/"

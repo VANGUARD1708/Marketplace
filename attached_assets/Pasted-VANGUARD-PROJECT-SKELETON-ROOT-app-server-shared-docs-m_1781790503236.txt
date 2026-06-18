@@ -1,0 +1,496 @@
+VANGUARD PROJECT SKELETON
+
+ROOT
+
+app/
+server/
+shared/
+docs/
+modules/
+
+====================================================
+MODULES
+====================================================
+
+modules/
+├── auth/
+├── profile/
+├── trust/
+├── feed/
+├── marketplace/
+├── services/
+├── jobs/
+├── courses/
+├── chat/
+├── wallet/
+├── escrow/
+├── company/
+├── verification/
+├── delivery/
+├── ai/
+├── notifications/
+├── governance/
+├── admin/
+├── analytics/
+└── settings/
+
+====================================================
+FRONTEND
+====================================================
+
+app/
+
+├── pages/
+│
+├── HomePage
+├── FeedPage
+├── ProfilePage
+├── MarketplacePage
+├── ProductPage
+├── ServicesPage
+├── ServicePage
+├── JobsPage
+├── JobPage
+├── CoursesPage
+├── CoursePage
+├── WalletPage
+├── EscrowPage
+├── ChatPage
+├── NotificationsPage
+├── CompanyPage
+├── VerificationPage
+├── SettingsPage
+├── AdminPage
+└── AIPage
+
+====================================================
+PROFILE PAGE
+====================================================
+
+Profile Header
+
+Avatar
+Cover Photo
+Trust Score
+Verification Badge
+Followers
+Following
+
+Tabs
+
+Overview
+Posts
+Products
+Services
+Jobs
+Courses
+Portfolio
+Reviews
+Certificates
+Followers
+Following
+
+====================================================
+FEED PAGE
+====================================================
+
+Scroll Feed
+
+Products
+Services
+Jobs
+Courses
+Business Updates
+
+Actions
+
+Like
+Comment
+Share
+Save
+Follow
+
+====================================================
+MARKETPLACE
+====================================================
+
+Create Listing
+
+Listing Details
+
+Title
+Price
+Description
+Images
+Category
+Condition
+
+Marketplace Search
+
+Marketplace Filters
+
+Product Details
+
+Seller Profile
+Trust Score
+Reviews
+Chat Button
+
+====================================================
+SERVICES
+====================================================
+
+Create Service
+
+Service Details
+
+Pricing
+Description
+Portfolio
+Reviews
+
+Hire Button
+
+====================================================
+JOBS
+====================================================
+
+Post Job
+
+Job Details
+
+Budget
+Location
+Requirements
+
+Apply Button
+
+Application System
+
+Employer Dashboard
+
+====================================================
+COURSES
+====================================================
+
+Create Course
+
+Course Details
+
+Lessons
+Materials
+Price
+
+Teacher Profile
+
+Student Reviews
+
+====================================================
+CHAT
+====================================================
+
+Conversation List
+
+Private Chat
+
+Messages
+
+Offers
+
+Images
+
+Attachments
+
+Dispute Evidence Storage
+
+====================================================
+WALLET
+====================================================
+
+Wallet Dashboard
+
+Available Balance
+
+Pending Balance
+
+Escrow Balance
+
+Reserved Balance
+
+Deposit
+
+Withdraw
+
+Transaction History
+
+====================================================
+ESCROW
+====================================================
+
+Escrow Dashboard
+
+Active Escrows
+
+Released Escrows
+
+Disputed Escrows
+
+Escrow Details
+
+Buyer
+Seller
+Amount
+Status
+
+====================================================
+VERIFICATION
+====================================================
+
+Certificate Upload
+
+Certificate Number
+
+Verification Status
+
+Professional Badge
+
+====================================================
+COMPANY
+====================================================
+
+Create Company
+
+Company Profile
+
+Employees
+
+Products
+
+Services
+
+Followers
+
+Company Trust Score
+
+====================================================
+DELIVERY
+====================================================
+
+Verified Driver Profile
+
+Live Tracking
+
+Delivery Status
+
+Delivery History
+
+====================================================
+AI
+====================================================
+
+Vanguard AI
+
+Recommendations
+
+Search
+
+Assistant
+
+Guardian AI
+
+Fraud Detection
+
+Trust Monitoring
+
+Risk Analysis
+
+====================================================
+NOTIFICATIONS
+====================================================
+
+New Message
+
+New Order
+
+New Review
+
+Escrow Update
+
+Verification Update
+
+====================================================
+ADMIN
+====================================================
+
+Admin Dashboard
+
+Users
+
+Listings
+
+Reports
+
+Verification Requests
+
+Escrow Cases
+
+Disputes
+
+Analytics
+
+====================================================
+GOVERNANCE
+====================================================
+
+Suggestion Box
+
+Community Feedback
+
+Sub Admin Review
+
+Admin Review
+
+Decision Log
+
+====================================================
+DATABASE TABLES
+====================================================
+
+users
+
+profiles
+
+trust_scores
+
+followers
+
+reviews
+
+linked_accounts
+
+certificates
+
+posts
+
+listings
+
+listing_images
+
+services
+
+jobs
+
+job_applications
+
+courses
+
+course_lessons
+
+conversations
+
+conversation_participants
+
+messages
+
+wallets
+
+transactions
+
+escrows
+
+orders
+
+disputes
+
+companies
+
+company_members
+
+notifications
+
+audit_logs
+
+ai_conversations
+
+verification_requests
+
+delivery_drivers
+
+delivery_tracking
+
+suggestions
+
+admin_reports
+
+====================================================
+PHASE ORDER
+====================================================
+
+PHASE 1
+
+Auth
+Profiles
+Trust
+Followers
+
+PHASE 2
+
+Feed
+Posts
+Reviews
+
+PHASE 3
+
+Marketplace
+Chat
+
+PHASE 4
+
+Jobs
+Services
+
+PHASE 5
+
+Wallet
+Escrow
+
+PHASE 6
+
+Verification
+Certificates
+
+PHASE 7
+
+Companies
+
+PHASE 8
+
+AI
+
+PHASE 9
+
+Governance
+
+PHASE 10
+
+Delivery Tracking
+
+====================================================
+DO NOT BUILD YET
+====================================================
+
+International Payments
+
+Inheritance System
+
+Advanced Analytics
+
+Multi Currency
+
+Global Trust Network
+
+Build placeholders first.
+
+Then build one module at a time.
+
+Never regenerate the entire project.

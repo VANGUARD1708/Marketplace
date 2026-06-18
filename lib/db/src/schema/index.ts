@@ -1,20 +1,33 @@
-// Export your models here. Add one export per file
-// export * from "./posts";
-//
-// Each model/table should ideally be split into different files.
-// Each model/table should define a Drizzle table, insert schema, and types:
-//
-//   import { pgTable, text, serial } from "drizzle-orm/pg-core";
-//   import { createInsertSchema } from "drizzle-zod";
-//   import { z } from "zod/v4";
-//
-//   export const postsTable = pgTable("posts", {
-//     id: serial("id").primaryKey(),
-//     title: text("title").notNull(),
-//   });
-//
-//   export const insertPostSchema = createInsertSchema(postsTable).omit({ id: true });
-//   export type InsertPost = z.infer<typeof insertPostSchema>;
-//   export type Post = typeof postsTable.$inferSelect;
-
-export {}
+export * from "./users";
+export * from "./profiles";
+export * from "./trust_scores";
+export * from "./followers";
+export * from "./reviews";
+export * from "./linked_accounts";
+export * from "./certificates";
+export * from "./posts";
+export * from "./listings";
+export * from "./listing_images";
+export * from "./services";
+export * from "./jobs";
+export * from "./job_applications";
+export * from "./courses";
+export * from "./course_lessons";
+export * from "./conversations";
+export * from "./conversation_participants";
+export * from "./messages";
+export * from "./wallets";
+export * from "./transactions";
+export * from "./escrows";
+export * from "./orders";
+export * from "./disputes";
+export * from "./companies";
+export * from "./company_members";
+export * from "./notifications";
+export * from "./audit_logs";
+export * from "./ai_conversations";
+export * from "./verification_requests";
+export * from "./delivery_drivers";
+export * from "./delivery_tracking";
+export * from "./suggestions";
+export * from "./admin_reports";
