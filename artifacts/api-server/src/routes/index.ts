@@ -20,6 +20,8 @@ import governanceRouter from "./governance";
 import adminRouter from "./admin";
 import analyticsRouter from "./analytics";
 import settingsRouter from "./settings";
+import ordersRouter from "./orders";
+import disputeRouter from "./dispute";
 
 const router: IRouter = Router();
 
@@ -44,5 +46,7 @@ router.use("/governance", governanceRouter);
 router.use("/admin", adminRouter);
 router.use("/analytics", analyticsRouter);
 router.use("/settings", settingsRouter);
+router.use("/orders", ordersRouter);
+router.use("/disputes", disputeRouter);
 
 export default router;

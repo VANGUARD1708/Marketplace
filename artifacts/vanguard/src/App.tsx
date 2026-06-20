@@ -141,7 +141,7 @@ function App() {
       <TooltipProvider>
         <WouterRouter
           base={import.meta.env.BASE_URL.replace(
-            //$/,
+            /\/$/,
             "",
           )}
         >
