@@ -6,7 +6,7 @@ export const reviewsTable = pgTable("reviews", {
   id: serial("id").primaryKey(),
   reviewerId: integer("reviewer_id").notNull(),
   subjectId: integer("subject_id").notNull(),
-  rating: numeric("rating", { precision: 2, scale: 1 }).notNull(),
+  rating: numeric("rating", { precision: 3, scale: 1 }).notNull(),
   comment: text("comment"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
