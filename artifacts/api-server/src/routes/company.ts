@@ -2,12 +2,30 @@ import { Router } from "express";
 
 const router = Router();
 
-let companies = [
+type Company = {
+  id: number;
+  ownerId: number;
+  name: string;
+  description: string;
+  industry: string;
+  verified: boolean;
+  followers: number;
+  createdAt: Date;
+};
+
+type CompanyMember = {
+  companyId: number;
+  userId: number;
+  role: string;
+};
+
+let companies: Company[] = [
   {
     id: 1,
     ownerId: 1,
     name: "Vanguard Technologies",
-    description: "Technology and digital commerce company.",
+    description:
+      "Technology and digital commerce company.",
     industry: "Technology",
     verified: false,
     followers: 0,
@@ -15,7 +33,7 @@ let companies = [
   },
 ];
 
-let companyMembers = [
+let companyMembers: CompanyMember[] = [
   {
     companyId: 1,
     userId: 1,
@@ -25,14 +43,14 @@ let companyMembers = [
 
 /**
  * GET /api/companies
- /
+ */
 router.get("/", (_req, res) => {
-  res.json(companies);
+  return res.json(companies);
 });
 
-/*
+/**
  * POST /api/companies
- /
+ */
 router.post("/", (req, res) => {
   const {
     ownerId,
@@ -47,12 +65,12 @@ router.post("/", (req, res) => {
     });
   }
 
-  const company = {
+  const company: Company = {
     id: Date.now(),
-    ownerId,
-    name,
-    description: description || "",
-    industry: industry || "General",
+    ownerId: Number(ownerId),
+    name: String(name),
+    description: description ?? "",
+    industry: industry ?? "General",
     verified: false,
     followers: 0,
     createdAt: new Date(),
@@ -62,19 +80,19 @@ router.post("/", (req, res) => {
 
   companyMembers.push({
     companyId: company.id,
-    userId: ownerId,
+    userId: company.ownerId,
     role: "Owner",
   });
 
-  res.status(201).json(company);
+  return res.status(201).json(company);
 });
 
-/*
+/**
  * GET /api/companies/:id
- /
+ */
 router.get("/:id", (req, res) => {
   const company = companies.find(
-    (c) => c.id === Number(req.params.id)
+    (c) => c.id === Number(req.params.id),
   );
 
   if (!company) {
@@ -83,15 +101,15 @@ router.get("/:id", (req, res) => {
     });
   }
 
-  res.json(company);
+  return res.json(company);
 });
 
-/*
+/**
  * PATCH /api/companies/:id
- /
+ */
 router.patch("/:id", (req, res) => {
   const company = companies.find(
-    (c) => c.id === Number(req.params.id)
+    (c) => c.id === Number(req.params.id),
   );
 
   if (!company) {
@@ -100,23 +118,38 @@ router.patch("/:id", (req, res) => {
     });
   }
 
-  Object.assign(company, req.body);
+  if (req.body.name !== undefined) {
+    company.name = String(req.body.name);
+  }
 
-  res.json(company);
+  if (req.body.description !== undefined) {
+    company.description = String(
+      req.body.description,
+    );
+  }
+
+  if (req.body.industry !== undefined) {
+    company.industry = String(
+      req.body.industry,
+    );
+  }
+
+  return res.json(company);
 });
 
-/*
+/**
  * GET /api/companies/:id/members
- /
+ */
 router.get("/:id/members", (req, res) => {
   const members = companyMembers.filter(
-    (m) => m.companyId === Number(req.params.id)
+    (m) =>
+      m.companyId === Number(req.params.id),
   );
 
-  res.json(members);
+  return res.json(members);
 });
 
-/*
+/**
  * POST /api/companies/:id/members
  */
 router.post("/:id/members", (req, res) => {
@@ -128,15 +161,15 @@ router.post("/:id/members", (req, res) => {
     });
   }
 
-  const member = {
+  const member: CompanyMember = {
     companyId: Number(req.params.id),
-    userId,
-    role: role || "Member",
+    userId: Number(userId),
+    role: role ?? "Member",
   };
 
   companyMembers.push(member);
 
-  res.status(201).json(member);
+  return res.status(201).json(member);
 });
 
 export default router;

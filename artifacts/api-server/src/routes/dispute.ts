@@ -3,9 +3,8 @@ import { db } from "@workspace/db";
 import {
   disputesTable,
   escrowsTable,
-  notificationsTable,
 } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 
 const router = Router();
 
@@ -16,16 +15,14 @@ router.get("/", async (_req, res) => {
   try {
     const disputes =
       await db.query.disputesTable.findMany({
-        orderBy: (disputes, { desc }) => [
-          desc(disputes.createdAt),
-        ],
+        orderBy: [desc(disputesTable.createdAt)],
       });
 
-    res.json(disputes);
+    return res.json(disputes);
   } catch (error) {
     console.error(error);
 
-    res.status(500).json({
+    return res.status(500).json({
       error: "Failed to load disputes",
     });
   }
@@ -50,11 +47,11 @@ router.get("/:id", async (req, res) => {
       });
     }
 
-    res.json(dispute);
+    return res.json(dispute);
   } catch (error) {
     console.error(error);
 
-    res.status(500).json({
+    return res.status(500).json({
       error: "Failed to load dispute",
     });
   }
@@ -104,11 +101,11 @@ router.post("/", async (req, res) => {
         );
     }
 
-    res.status(201).json(dispute);
+    return res.status(201).json(dispute);
   } catch (error) {
     console.error(error);
 
-    res.status(500).json({
+    return res.status(500).json({
       error: "Failed to create dispute",
     });
   }
@@ -144,14 +141,14 @@ router.patch(
         });
       }
 
-      res.json({
+      return res.json({
         success: true,
         dispute,
       });
     } catch (error) {
       console.error(error);
 
-      res.status(500).json({
+      return res.status(500).json({
         error: "Failed to resolve dispute",
       });
     }

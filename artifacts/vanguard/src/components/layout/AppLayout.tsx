@@ -63,7 +63,6 @@ export default function AppLayout({
 
         <div className="flex items-center gap-2">
           <Lock className="h-4 w-4 text-primary" />
-
           <span className="text-base font-bold text-sidebar-foreground tracking-tight">
             Vanguard
           </span>
@@ -78,12 +77,13 @@ export default function AppLayout({
       )}
 
       <div
-        className={fixed top-0 left-0 z-50 h-full w-64 bg-sidebar border-r border-sidebar-border flex flex-col transition-transform duration-200 ${           open             ? "translate-x-0"             : "-translate-x-full"         }}
+        className={`fixed top-0 left-0 z-50 h-full w-64 bg-sidebar border-r border-sidebar-border flex flex-col transition-transform duration-200 ${
+          open ? "translate-x-0" : "-translate-x-full"
+        }`}
       >
         <div className="h-14 flex items-center justify-between px-4 border-b border-sidebar-border">
           <div className="flex items-center gap-2">
             <Lock className="h-4 w-4 text-primary" />
-
             <span className="text-base font-bold text-sidebar-foreground tracking-tight">
               Vanguard
             </span>
@@ -110,13 +110,14 @@ export default function AppLayout({
                 <li key={item.path}>
                   <Link href={item.path}>
                     <span
-                      onClick={() =>
-                        setOpen(false)
-                      }
-                      className={flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer ${                         active                           ? "bg-sidebar-primary text-sidebar-primary-foreground"                           : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"                       }}
+                      onClick={() => setOpen(false)}
+                      className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer ${
+                        active
+                          ? "bg-sidebar-primary text-sidebar-primary-foreground"
+                          : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                      }`}
                     >
                       <item.icon className="h-4 w-4 shrink-0" />
-
                       {item.label}
                     </span>
                   </Link>
@@ -136,9 +137,7 @@ export default function AppLayout({
       </main>
 
       <button
-        onClick={() =>
-          navigate("/create-listing")
-        }
+        onClick={() => navigate("/create-listing")}
         className="fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center"
         aria-label="Create Listing"
       >

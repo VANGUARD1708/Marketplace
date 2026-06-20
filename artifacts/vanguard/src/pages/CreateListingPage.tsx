@@ -72,7 +72,7 @@ export default function CreateListingPage() {
 
       setTimeout(() => {
         navigate(
-          /marketplace/${listing.id},
+          `/marketplace/${listing.id}`,
         );
       }, 1000);
     } catch (err) {
@@ -184,12 +184,18 @@ export default function CreateListingPage() {
               <option>
                 Electronics
               </option>
-              <option>Fashion</option>
-              <option>Vehicles</option>
+              <option>
+                Fashion
+              </option>
+              <option>
+                Vehicles
+              </option>
               <option>
                 Real Estate
               </option>
-              <option>Services</option>
+              <option>
+                Services
+              </option>
             </select>
           </div>
         </div>
@@ -212,9 +218,15 @@ export default function CreateListingPage() {
             <option value="">
               Select Condition
             </option>
-            <option>Brand New</option>
-            <option>Used</option>
-            <option>Refurbished</option>
+            <option>
+              Brand New
+            </option>
+            <option>
+              Used
+            </option>
+            <option>
+              Refurbished
+            </option>
           </select>
         </div>
 

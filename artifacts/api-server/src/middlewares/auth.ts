@@ -17,11 +17,15 @@ export interface AuthRequest
   };
 }
 
+type JwtPayload = {
+  userId: number;
+};
+
 export function requireAuth(
   req: AuthRequest,
   res: Response,
   next: NextFunction,
-) {
+): void | Response {
   try {
     const authHeader =
       req.headers.authorization;
@@ -32,25 +36,45 @@ export function requireAuth(
       });
     }
 
-    const token =
-      authHeader.replace(
+    if (
+      !authHeader.startsWith(
         "Bearer ",
-        "",
-      );
+      )
+    ) {
+      return res.status(401).json({
+        error: "Invalid token format",
+      });
+    }
+
+    const token =
+      authHeader.slice(7);
 
     const payload = jwt.verify(
       token,
       JWT_SECRET,
-    ) as {
-      userId: number;
-    };
+    ) as JwtPayload;
+
+    if (
+      !payload ||
+      typeof payload.userId !==
+        "number"
+    ) {
+      return res.status(401).json({
+        error: "Invalid token payload",
+      });
+    }
 
     req.user = {
       id: payload.userId,
     };
 
-    next();
-  } catch {
+    return next();
+  } catch (error) {
+    console.error(
+      "JWT verification failed:",
+      error,
+    );
+
     return res.status(401).json({
       error: "Invalid token",
     });

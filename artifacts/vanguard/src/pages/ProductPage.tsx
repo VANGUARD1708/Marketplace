@@ -25,7 +25,7 @@ export default function ProductPage() {
         setLoading(true);
 
         const response = await fetch(
-          /api/marketplace/listings/${params?.id},
+          `/api/marketplace/listings/${params?.id}`,
         );
 
         if (!response.ok) {
@@ -81,7 +81,7 @@ export default function ProductPage() {
           </h1>
 
           <p className="text-2xl font-bold text-primary mb-4">
-            ${listing.price}
+            ₦{listing.price}
           </p>
 
           <div className="flex flex-wrap gap-2 mb-4">

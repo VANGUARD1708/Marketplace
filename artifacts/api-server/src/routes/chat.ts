@@ -2,7 +2,23 @@ import { Router } from "express";
 
 const router = Router();
 
-let conversations = [
+type Conversation = {
+  id: number;
+  buyerId: number;
+  sellerId: number;
+  createdAt: Date;
+};
+
+type Message = {
+  id: number;
+  conversationId: number;
+  senderId: number;
+  type: string;
+  content: string;
+  createdAt: Date;
+};
+
+let conversations: Conversation[] = [
   {
     id: 1,
     buyerId: 1,
@@ -11,7 +27,7 @@ let conversations = [
   },
 ];
 
-let messages = [
+let messages: Message[] = [
   {
     id: 1,
     conversationId: 1,
@@ -24,14 +40,14 @@ let messages = [
 
 /**
  * GET /api/chat/conversations
- /
+ */
 router.get("/conversations", (_req, res) => {
-  res.json(conversations);
+  return res.json(conversations);
 });
 
-/*
+/**
  * POST /api/chat/conversations
- /
+ */
 router.post("/conversations", (req, res) => {
   const { buyerId, sellerId } = req.body;
 
@@ -41,24 +57,24 @@ router.post("/conversations", (req, res) => {
     });
   }
 
-  const conversation = {
+  const conversation: Conversation = {
     id: Date.now(),
-    buyerId,
-    sellerId,
+    buyerId: Number(buyerId),
+    sellerId: Number(sellerId),
     createdAt: new Date(),
   };
 
   conversations.unshift(conversation);
 
-  res.status(201).json(conversation);
+  return res.status(201).json(conversation);
 });
 
-/*
+/**
  * GET /api/chat/conversations/:id
- /
+ */
 router.get("/conversations/:id", (req, res) => {
   const conversation = conversations.find(
-    (c) => c.id === Number(req.params.id)
+    (c) => c.id === Number(req.params.id),
   );
 
   if (!conversation) {
@@ -67,48 +83,64 @@ router.get("/conversations/:id", (req, res) => {
     });
   }
 
-  res.json(conversation);
+  return res.json(conversation);
 });
 
-/*
+/**
  * GET /api/chat/conversations/:id/messages
- /
-router.get("/conversations/:id/messages", (req, res) => {
-  const conversationMessages = messages.filter(
-    (m) => m.conversationId === Number(req.params.id)
-  );
+ */
+router.get(
+  "/conversations/:id/messages",
+  (req, res) => {
+    const conversationMessages =
+      messages.filter(
+        (m) =>
+          m.conversationId ===
+          Number(req.params.id),
+      );
 
-  res.json(conversationMessages);
-});
+    return res.json(
+      conversationMessages,
+    );
+  },
+);
 
-/*
+/**
  * POST /api/chat/conversations/:id/messages
  */
-router.post("/conversations/:id/messages", (req, res) => {
-  const {
-    senderId,
-    content,
-    type = "text",
-  } = req.body;
+router.post(
+  "/conversations/:id/messages",
+  (req, res) => {
+    const {
+      senderId,
+      content,
+      type = "text",
+    } = req.body;
 
-  if (!senderId || !content) {
-    return res.status(400).json({
-      error: "senderId and content required",
-    });
-  }
+    if (!senderId || !content) {
+      return res.status(400).json({
+        error:
+          "senderId and content required",
+      });
+    }
 
-  const message = {
-    id: Date.now(),
-    conversationId: Number(req.params.id),
-    senderId,
-    type,
-    content,
-    createdAt: new Date(),
-  };
+    const message: Message = {
+      id: Date.now(),
+      conversationId: Number(
+        req.params.id,
+      ),
+      senderId: Number(senderId),
+      type: String(type),
+      content: String(content),
+      createdAt: new Date(),
+    };
 
-  messages.push(message);
+    messages.push(message);
 
-  res.status(201).json(message);
-});
+    return res.status(201).json(
+      message,
+    );
+  },
+);
 
 export default router;
