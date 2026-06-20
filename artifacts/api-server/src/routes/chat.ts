@@ -1,146 +1,117 @@
 import { Router } from "express";
+import { db } from "@workspace/db";
+import {
+  conversationsTable,
+  conversationParticipantsTable,
+  messagesTable,
+} from "@workspace/db";
+import { eq, and } from "drizzle-orm";
 
 const router = Router();
 
-type Conversation = {
-  id: number;
-  buyerId: number;
-  sellerId: number;
-  createdAt: Date;
-};
+router.get("/conversations", async (req, res) => {
+  try {
+    const userId = Number(req.query.userId);
+    if (!userId) return res.status(400).json({ error: "userId required" });
 
-type Message = {
-  id: number;
-  conversationId: number;
-  senderId: number;
-  type: string;
-  content: string;
-  createdAt: Date;
-};
-
-let conversations: Conversation[] = [
-  {
-    id: 1,
-    buyerId: 1,
-    sellerId: 2,
-    createdAt: new Date(),
-  },
-];
-
-let messages: Message[] = [
-  {
-    id: 1,
-    conversationId: 1,
-    senderId: 1,
-    type: "text",
-    content: "Hello, is this still available?",
-    createdAt: new Date(),
-  },
-];
-
-/**
- * GET /api/chat/conversations
- */
-router.get("/conversations", (_req, res) => {
-  return res.json(conversations);
-});
-
-/**
- * POST /api/chat/conversations
- */
-router.post("/conversations", (req, res) => {
-  const { buyerId, sellerId } = req.body;
-
-  if (!buyerId || !sellerId) {
-    return res.status(400).json({
-      error: "buyerId and sellerId required",
+    const participations = await db.query.conversationParticipantsTable.findMany({
+      where: eq(conversationParticipantsTable.userId, userId),
     });
-  }
 
-  const conversation: Conversation = {
-    id: Date.now(),
-    buyerId: Number(buyerId),
-    sellerId: Number(sellerId),
-    createdAt: new Date(),
-  };
-
-  conversations.unshift(conversation);
-
-  return res.status(201).json(conversation);
-});
-
-/**
- * GET /api/chat/conversations/:id
- */
-router.get("/conversations/:id", (req, res) => {
-  const conversation = conversations.find(
-    (c) => c.id === Number(req.params.id),
-  );
-
-  if (!conversation) {
-    return res.status(404).json({
-      error: "Conversation not found",
-    });
-  }
-
-  return res.json(conversation);
-});
-
-/**
- * GET /api/chat/conversations/:id/messages
- */
-router.get(
-  "/conversations/:id/messages",
-  (req, res) => {
-    const conversationMessages =
-      messages.filter(
-        (m) =>
-          m.conversationId ===
-          Number(req.params.id),
-      );
-
-    return res.json(
-      conversationMessages,
+    const conversations = await Promise.all(
+      participations.map((p) =>
+        db.query.conversationsTable.findFirst({ where: eq(conversationsTable.id, p.conversationId) })
+      )
     );
-  },
-);
 
-/**
- * POST /api/chat/conversations/:id/messages
- */
-router.post(
-  "/conversations/:id/messages",
-  (req, res) => {
-    const {
-      senderId,
-      content,
-      type = "text",
-    } = req.body;
+    return res.json(conversations.filter(Boolean));
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Failed to load conversations" });
+  }
+});
 
-    if (!senderId || !content) {
-      return res.status(400).json({
-        error:
-          "senderId and content required",
-      });
+router.post("/conversations", async (req, res) => {
+  try {
+    const { participantIds } = req.body;
+    if (!Array.isArray(participantIds) || participantIds.length < 2) {
+      return res.status(400).json({ error: "participantIds array of ≥2 required" });
     }
 
-    const message: Message = {
-      id: Date.now(),
-      conversationId: Number(
-        req.params.id,
-      ),
-      senderId: Number(senderId),
-      type: String(type),
-      content: String(content),
-      createdAt: new Date(),
-    };
+    const [conversation] = await db.insert(conversationsTable).values({ type: "direct" }).returning();
 
-    messages.push(message);
-
-    return res.status(201).json(
-      message,
+    await Promise.all(
+      (participantIds as number[]).map((uid) =>
+        db.insert(conversationParticipantsTable).values({ conversationId: conversation.id, userId: uid })
+      )
     );
-  },
-);
+
+    return res.status(201).json(conversation);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Failed to create conversation" });
+  }
+});
+
+router.get("/conversations/:id", async (req, res) => {
+  try {
+    const conversation = await db.query.conversationsTable.findFirst({
+      where: eq(conversationsTable.id, Number(req.params.id)),
+    });
+    if (!conversation) return res.status(404).json({ error: "Conversation not found" });
+    return res.json(conversation);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Failed to load conversation" });
+  }
+});
+
+router.get("/conversations/:id/messages", async (req, res) => {
+  try {
+    const messages = await db.query.messagesTable.findMany({
+      where: eq(messagesTable.conversationId, Number(req.params.id)),
+      orderBy: (m, { asc }) => [asc(m.createdAt)],
+    });
+    return res.json(messages);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Failed to load messages" });
+  }
+});
+
+router.post("/conversations/:id/messages", async (req, res) => {
+  try {
+    const { senderId, content, mediaUrl, messageType = "text" } = req.body;
+    if (!senderId || !content) return res.status(400).json({ error: "senderId and content required" });
+
+    const [message] = await db.insert(messagesTable).values({
+      conversationId: Number(req.params.id),
+      senderId: Number(senderId),
+      content: String(content),
+      mediaUrl,
+      messageType,
+    }).returning();
+
+    return res.status(201).json(message);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Failed to send message" });
+  }
+});
+
+router.delete("/conversations/:id/messages/:msgId", async (req, res) => {
+  try {
+    await db.delete(messagesTable).where(
+      and(
+        eq(messagesTable.id, Number(req.params.msgId)),
+        eq(messagesTable.conversationId, Number(req.params.id))
+      )
+    );
+    return res.json({ success: true });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Failed to delete message" });
+  }
+});
 
 export default router;

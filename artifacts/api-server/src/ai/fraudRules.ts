@@ -1,9 +1,6 @@
-export interface FraudSignal {
-  rule: string;
-  severity: "low" | "medium" | "high";
-  triggered: boolean;
-}
-
-export async function evaluateFraudRules(_payload: unknown): Promise<FraudSignal[]> {
-  throw new Error("Not implemented");
-}
+export const FRAUD_RULES = {
+  LOW_PRICE_THRESHOLD: 0.5,
+  HIGH_VALUE_TRANSACTION: 500000,
+  MAX_DISPUTES: 3,
+  NEW_ACCOUNT_DAYS: 30,
+};

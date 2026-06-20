@@ -56,3 +56,9 @@ export * from "./delivery_tracking";
 export * from "./suggestions";
 
 export * from "./admin_reports";
+
+/* Guardian AI Tables */
+export * from "./guardian_alerts";
+export * from "./risk_assessments";
+export * from "./fraud_cases";
+export * from "./guardian_actions";

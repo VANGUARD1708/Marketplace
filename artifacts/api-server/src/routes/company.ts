@@ -1,175 +1,115 @@
 import { Router } from "express";
+import { db } from "@workspace/db";
+import { companiesTable, companyMembersTable } from "@workspace/db";
+import { eq, desc } from "drizzle-orm";
+import { requireAuth, type AuthRequest } from "../middlewares/auth";
 
 const router = Router();
 
-type Company = {
-  id: number;
-  ownerId: number;
-  name: string;
-  description: string;
-  industry: string;
-  verified: boolean;
-  followers: number;
-  createdAt: Date;
-};
-
-type CompanyMember = {
-  companyId: number;
-  userId: number;
-  role: string;
-};
-
-let companies: Company[] = [
-  {
-    id: 1,
-    ownerId: 1,
-    name: "Vanguard Technologies",
-    description:
-      "Technology and digital commerce company.",
-    industry: "Technology",
-    verified: false,
-    followers: 0,
-    createdAt: new Date(),
-  },
-];
-
-let companyMembers: CompanyMember[] = [
-  {
-    companyId: 1,
-    userId: 1,
-    role: "Owner",
-  },
-];
-
-/**
- * GET /api/companies
- */
-router.get("/", (_req, res) => {
-  return res.json(companies);
+router.get("/", async (_req, res) => {
+  try {
+    const companies = await db.query.companiesTable.findMany({
+      orderBy: [desc(companiesTable.createdAt)],
+    });
+    return res.json(companies);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Failed to load companies" });
+  }
 });
 
-/**
- * POST /api/companies
- */
-router.post("/", (req, res) => {
-  const {
-    ownerId,
-    name,
-    description,
-    industry,
-  } = req.body;
+router.post("/", requireAuth, async (req: AuthRequest, res) => {
+  try {
+    const { name, description, website } = req.body;
+    if (!name) return res.status(400).json({ error: "name required" });
 
-  if (!ownerId || !name) {
-    return res.status(400).json({
-      error: "ownerId and name are required",
+    const [company] = await db.insert(companiesTable).values({
+      ownerId: req.user!.id,
+      name,
+      description,
+      website,
+      status: "active",
+    }).returning();
+
+    await db.insert(companyMembersTable).values({
+      companyId: company.id,
+      userId: req.user!.id,
+      role: "owner",
     });
+
+    return res.status(201).json(company);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Failed to create company" });
   }
-
-  const company: Company = {
-    id: Date.now(),
-    ownerId: Number(ownerId),
-    name: String(name),
-    description: description ?? "",
-    industry: industry ?? "General",
-    verified: false,
-    followers: 0,
-    createdAt: new Date(),
-  };
-
-  companies.unshift(company);
-
-  companyMembers.push({
-    companyId: company.id,
-    userId: company.ownerId,
-    role: "Owner",
-  });
-
-  return res.status(201).json(company);
 });
 
-/**
- * GET /api/companies/:id
- */
-router.get("/:id", (req, res) => {
-  const company = companies.find(
-    (c) => c.id === Number(req.params.id),
-  );
-
-  if (!company) {
-    return res.status(404).json({
-      error: "Company not found",
+router.get("/:id", async (req, res) => {
+  try {
+    const company = await db.query.companiesTable.findFirst({
+      where: eq(companiesTable.id, Number(req.params.id)),
     });
+    if (!company) return res.status(404).json({ error: "Company not found" });
+    return res.json(company);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Failed to load company" });
   }
-
-  return res.json(company);
 });
 
-/**
- * PATCH /api/companies/:id
- */
-router.patch("/:id", (req, res) => {
-  const company = companies.find(
-    (c) => c.id === Number(req.params.id),
-  );
+router.patch("/:id", requireAuth, async (req: AuthRequest, res) => {
+  try {
+    const { name, description, logoUrl, coverPhotoUrl, website } = req.body;
+    const [company] = await db.update(companiesTable)
+      .set({ name, description, logoUrl, coverPhotoUrl, website, updatedAt: new Date() })
+      .where(eq(companiesTable.id, Number(req.params.id)))
+      .returning();
+    if (!company) return res.status(404).json({ error: "Company not found" });
+    return res.json(company);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Failed to update company" });
+  }
+});
 
-  if (!company) {
-    return res.status(404).json({
-      error: "Company not found",
+router.get("/:id/members", async (req, res) => {
+  try {
+    const members = await db.query.companyMembersTable.findMany({
+      where: eq(companyMembersTable.companyId, Number(req.params.id)),
     });
+    return res.json(members);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Failed to load members" });
   }
+});
 
-  if (req.body.name !== undefined) {
-    company.name = String(req.body.name);
+router.post("/:id/members", async (req, res) => {
+  try {
+    const { userId, role = "member" } = req.body;
+    if (!userId) return res.status(400).json({ error: "userId required" });
+    const [member] = await db.insert(companyMembersTable).values({
+      companyId: Number(req.params.id),
+      userId: Number(userId),
+      role,
+    }).returning();
+    return res.status(201).json(member);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Failed to add member" });
   }
+});
 
-  if (req.body.description !== undefined) {
-    company.description = String(
-      req.body.description,
+router.delete("/:id/members/:userId", async (req, res) => {
+  try {
+    await db.delete(companyMembersTable).where(
+      eq(companyMembersTable.companyId, Number(req.params.id))
     );
+    return res.json({ success: true });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Failed to remove member" });
   }
-
-  if (req.body.industry !== undefined) {
-    company.industry = String(
-      req.body.industry,
-    );
-  }
-
-  return res.json(company);
-});
-
-/**
- * GET /api/companies/:id/members
- */
-router.get("/:id/members", (req, res) => {
-  const members = companyMembers.filter(
-    (m) =>
-      m.companyId === Number(req.params.id),
-  );
-
-  return res.json(members);
-});
-
-/**
- * POST /api/companies/:id/members
- */
-router.post("/:id/members", (req, res) => {
-  const { userId, role } = req.body;
-
-  if (!userId) {
-    return res.status(400).json({
-      error: "userId required",
-    });
-  }
-
-  const member: CompanyMember = {
-    companyId: Number(req.params.id),
-    userId: Number(userId),
-    role: role ?? "Member",
-  };
-
-  companyMembers.push(member);
-
-  return res.status(201).json(member);
 });
 
 export default router;

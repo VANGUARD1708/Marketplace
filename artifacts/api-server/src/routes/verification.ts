@@ -1,126 +1,69 @@
 import { Router } from "express";
+import { db } from "@workspace/db";
+import { verificationRequestsTable } from "@workspace/db";
+import { eq, desc } from "drizzle-orm";
+import { requireAuth, type AuthRequest } from "../middlewares/auth";
 
 const router = Router();
 
-type VerificationStatus =
-  | "pending"
-  | "approved"
-  | "rejected";
-
-type Verification = {
-  id: number;
-  userId: number;
-  type: string;
-  documentNumber: string;
-  documentUrl: string;
-  status: VerificationStatus;
-  submittedAt: Date;
-  reviewedAt: Date | null;
-};
-
-let verifications: Verification[] = [
-  {
-    id: 1,
-    userId: 1,
-    type: "identity",
-    documentNumber: "ID123456",
-    documentUrl: "/uploads/id-card.jpg",
-    status: "pending",
-    submittedAt: new Date(),
-    reviewedAt: null,
-  },
-];
-
-/**
- * GET /api/verification
- */
-router.get("/", (_req, res) => {
-  return res.json(verifications);
+router.get("/", async (req, res) => {
+  try {
+    const userId = req.query.userId ? Number(req.query.userId) : undefined;
+    const rows = await db.query.verificationRequestsTable.findMany({
+      where: userId ? eq(verificationRequestsTable.userId, userId) : undefined,
+      orderBy: [desc(verificationRequestsTable.submittedAt)],
+    });
+    return res.json(rows);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Failed to load verification requests" });
+  }
 });
 
-/**
- * GET /api/verification/:id
- */
-router.get("/:id", (req, res) => {
-  const verification = verifications.find(
-    (v) => v.id === Number(req.params.id),
-  );
-
-  if (!verification) {
-    return res.status(404).json({
-      error: "Verification not found",
+router.get("/:id", async (req, res) => {
+  try {
+    const row = await db.query.verificationRequestsTable.findFirst({
+      where: eq(verificationRequestsTable.id, Number(req.params.id)),
     });
+    if (!row) return res.status(404).json({ error: "Verification request not found" });
+    return res.json(row);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Failed to load verification request" });
   }
-
-  return res.json(verification);
 });
 
-/**
- * POST /api/verification
- */
-router.post("/", (req, res) => {
-  const {
-    userId,
-    type,
-    documentNumber,
-    documentUrl,
-  } = req.body;
-
-  if (!userId || !type) {
-    return res.status(400).json({
-      error: "userId and type are required",
-    });
+router.post("/", requireAuth, async (req: AuthRequest, res) => {
+  try {
+    const { certificateId } = req.body;
+    const [row] = await db.insert(verificationRequestsTable).values({
+      userId: req.user!.id,
+      certificateId: certificateId ? Number(certificateId) : undefined,
+      status: "pending",
+    }).returning();
+    return res.status(201).json(row);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Failed to submit verification request" });
   }
-
-  const verification: Verification = {
-    id: Date.now(),
-    userId: Number(userId),
-    type: String(type),
-    documentNumber: documentNumber ?? "",
-    documentUrl: documentUrl ?? "",
-    status: "pending",
-    submittedAt: new Date(),
-    reviewedAt: null,
-  };
-
-  verifications.unshift(verification);
-
-  return res.status(201).json(verification);
 });
 
-/**
- * PATCH /api/verification/:id/status
- */
-router.patch("/:id/status", (req, res) => {
-  const verification = verifications.find(
-    (v) => v.id === Number(req.params.id),
-  );
-
-  if (!verification) {
-    return res.status(404).json({
-      error: "Verification not found",
-    });
+router.patch("/:id/status", async (req, res) => {
+  try {
+    const { status, reviewedById, reviewNotes } = req.body;
+    if (!["pending", "approved", "rejected"].includes(status)) {
+      return res.status(400).json({ error: "Invalid status" });
+    }
+    const [row] = await db.update(verificationRequestsTable)
+      .set({ status, reviewedById, reviewNotes, reviewedAt: new Date() })
+      .where(eq(verificationRequestsTable.id, Number(req.params.id)))
+      .returning();
+    if (!row) return res.status(404).json({ error: "Not found" });
+    return res.json({ success: true, verification: row });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Failed to update verification status" });
   }
-
-  const status = req.body.status as VerificationStatus;
-
-  if (
-    status !== "pending" &&
-    status !== "approved" &&
-    status !== "rejected"
-  ) {
-    return res.status(400).json({
-      error: "Invalid status",
-    });
-  }
-
-  verification.status = status;
-  verification.reviewedAt = new Date();
-
-  return res.json({
-    success: true,
-    verification,
-  });
 });
 
 export default router;

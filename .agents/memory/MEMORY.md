@@ -1,0 +1,3 @@
+- [Vanguard stack and conventions](vanguard-stack.md) — key tech decisions, port numbers, auth pattern, and module-by-module rule.
+- [API proxy setup](api-proxy.md) — Vite proxy routes /api to localhost:8080 in dev; frontend uses src/lib/api.ts for typed fetch with Bearer token.
+- [Misplaced file pattern](misplaced-files.md) — previous agents put React/JSX files under api-server/src/pages/; safe to delete that entire dir.
