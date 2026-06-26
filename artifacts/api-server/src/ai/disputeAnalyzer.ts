@@ -1,14 +1,18 @@
-export interface TransactionAnalysisInput {
-  amount: number;
+// api-server/src/ai/disputeAnalyzer.ts
+
+export interface DisputeAnalysisInput {
+  disputeCount: number;
+  transactionAmount: number;
   buyerVerified: boolean;
   sellerVerified: boolean;
   buyerTrustScore?: number;
   sellerTrustScore?: number;
-  disputeCount?: number;
+  resolutionTimeDays?: number;
 }
 
-export interface TransactionAnalysisResult {
+export interface DisputeAnalysisResult {
   score: number;
+
   riskLevel:
     | "low"
     | "medium"
@@ -22,74 +26,91 @@ export interface TransactionAnalysisResult {
   flags: string[];
 }
 
-export function analyzeTransaction(
-  transaction: TransactionAnalysisInput,
-): TransactionAnalysisResult {
+export function analyzeDispute(
+  dispute: DisputeAnalysisInput,
+): DisputeAnalysisResult {
   let score = 0;
 
   const flags: string[] = [];
 
+  // Previous disputes
   if (
-    !transaction.buyerVerified
+    dispute.disputeCount >= 3
   ) {
-    score += 20;
+    score += 25;
+
+    flags.push(
+      "Frequent disputes detected",
+    );
+  }
+
+  // Buyer verification
+  if (
+    !dispute.buyerVerified
+  ) {
+    score += 15;
 
     flags.push(
       "Buyer not verified",
     );
   }
 
+  // Seller verification
   if (
-    !transaction.sellerVerified
+    !dispute.sellerVerified
   ) {
-    score += 20;
+    score += 15;
 
     flags.push(
       "Seller not verified",
     );
   }
 
+  // Buyer trust score
   if (
-    (transaction.buyerTrustScore ??
+    (dispute.buyerTrustScore ??
       0) < 40
   ) {
     score += 15;
 
     flags.push(
-      "Buyer trust score low",
+      "Low buyer trust score",
     );
   }
 
+  // Seller trust score
   if (
-    (transaction.sellerTrustScore ??
+    (dispute.sellerTrustScore ??
       0) < 40
   ) {
     score += 15;
 
     flags.push(
-      "Seller trust score low",
+      "Low seller trust score",
     );
   }
 
+  // High-value transaction
   if (
-    transaction.amount >
+    dispute.transactionAmount >=
     1000000
   ) {
     score += 20;
 
     flags.push(
-      "High-value transaction",
+      "High-value dispute",
     );
   }
 
+  // Long resolution time
   if (
-    (transaction.disputeCount ??
-      0) >= 3
+    (dispute.resolutionTimeDays ??
+      0) > 14
   ) {
-    score += 25;
+    score += 10;
 
     flags.push(
-      "Multiple disputes detected",
+      "Dispute unresolved too long",
     );
   }
 
@@ -104,9 +125,7 @@ export function analyzeTransaction(
     | "block" = "allow";
 
   if (score >= 70) {
-    riskLevel =
-      "high";
-
+    riskLevel = "high";
     recommendation =
       "block";
   } else if (
@@ -114,7 +133,6 @@ export function analyzeTransaction(
   ) {
     riskLevel =
       "medium";
-
     recommendation =
       "review";
   }

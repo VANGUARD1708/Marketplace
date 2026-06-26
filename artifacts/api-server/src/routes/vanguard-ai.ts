@@ -1,22 +1,33 @@
 import { Router } from "express";
+
 import {
-  analyzeGuardian,
-  analyzeListing,
-  analyzeTransaction,
-  analyzeEscrow,
-} from "../ai/guardian";
+  runVanguardAssistant,
+} from "../ai/vanguardAssistant";
+
+import {
+  calculateTrustScore,
+} from "../ai/trustScore";
+
+import {
+  calculateReputation,
+} from "../ai/reputationEngine";
+
+import {
+  generateRecommendations,
+} from "../ai/recommendationEngine";
 
 const router = Router();
 
 /**
- * GET /api/guardian/health
+ * GET /api/vanguard-ai/health
  */
 router.get(
   "/health",
   (_req, res) => {
     return res.json({
       success: true,
-      service: "Guardian AI",
+      service:
+        "Vanguard AI",
       status: "online",
       timestamp:
         new Date().toISOString(),
@@ -25,14 +36,14 @@ router.get(
 );
 
 /**
- * POST /api/guardian/analyze
+ * POST /api/vanguard-ai/analyze
  */
 router.post(
   "/analyze",
   (req, res) => {
     try {
       const result =
-        analyzeGuardian(
+        runVanguardAssistant(
           req.body,
         );
 
@@ -48,21 +59,21 @@ router.post(
         .json({
           success: false,
           error:
-            "Guardian analysis failed",
+            "Failed to analyze user",
         });
     }
   },
 );
 
 /**
- * POST /api/guardian/listing
+ * POST /api/vanguard-ai/trust-score
  */
 router.post(
-  "/listing",
+  "/trust-score",
   (req, res) => {
     try {
       const result =
-        analyzeListing(
+        calculateTrustScore(
           req.body,
         );
 
@@ -78,28 +89,22 @@ router.post(
         .json({
           success: false,
           error:
-            "Listing analysis failed",
+            "Failed to calculate trust score",
         });
     }
   },
 );
 
 /**
- * POST /api/guardian/transaction
+ * POST /api/vanguard-ai/reputation
  */
 router.post(
-  "/transaction",
+  "/reputation",
   (req, res) => {
     try {
-      const {
-        amount,
-      } = req.body;
-
       const result =
-        analyzeTransaction(
-          Number(
-            amount,
-          ),
+        calculateReputation(
+          req.body,
         );
 
       return res.json({
@@ -114,28 +119,22 @@ router.post(
         .json({
           success: false,
           error:
-            "Transaction analysis failed",
+            "Failed to calculate reputation",
         });
     }
   },
 );
 
 /**
- * POST /api/guardian/escrow
+ * POST /api/vanguard-ai/recommend
  */
 router.post(
-  "/escrow",
+  "/recommend",
   (req, res) => {
     try {
-      const {
-        amount,
-      } = req.body;
-
       const result =
-        analyzeEscrow(
-          Number(
-            amount,
-          ),
+        generateRecommendations(
+          req.body,
         );
 
       return res.json({
@@ -150,7 +149,7 @@ router.post(
         .json({
           success: false,
           error:
-            "Escrow analysis failed",
+            "Failed to generate recommendations",
         });
     }
   },

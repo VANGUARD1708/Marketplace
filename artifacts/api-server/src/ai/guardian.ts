@@ -1,130 +1,220 @@
-import { calculateTrustScore } from "./trustScore";
-import { analyzeRisk } from "./riskAnalyzer";
+import {
+  calculateTrustScore,
+  type TrustScoreInput,
+} from "./trustScore";
 
-export interface GuardianUserInput {
-  verified: boolean;
-  companyVerified: boolean;
-  completedEscrows: number;
-  disputes: number;
-  listingPrice: number;
-}
+import {
+  analyzeRisk,
+  type RiskAnalysisInput,
+} from "./riskAnalyzer";
+
+import {
+  runFraudChecks,
+  type FraudCheckInput,
+} from "./fraudRules";
+
+export interface GuardianInput
+  extends TrustScoreInput,
+    RiskAnalysisInput,
+    FraudCheckInput {}
 
 export interface GuardianResult {
-  trust: {
-    score: number;
-    level: string;
-  };
-  risk: {
-    riskScore: number;
-    riskLevel: string;
-    recommendation: string;
-  };
+  trust: ReturnType<
+    typeof calculateTrustScore
+  >;
+
+  risk: ReturnType<
+    typeof analyzeRisk
+  >;
+
+  fraud: ReturnType<
+    typeof runFraudChecks
+  >;
+
   guardianDecision:
     | "allow"
     | "review"
     | "block";
+
+  summary: string[];
 }
 
-export function analyzeUser(
-  data: GuardianUserInput,
+export function analyzeGuardian(
+  input: GuardianInput,
 ): GuardianResult {
   const trust =
     calculateTrustScore({
-      verified: data.verified,
+      verified:
+        input.verified,
       companyVerified:
-        data.companyVerified,
+        input.companyVerified,
       completedEscrows:
-        data.completedEscrows,
-      disputes: data.disputes,
+        input.completedEscrows,
+      disputes:
+        input.disputes,
+      positiveReviews:
+        input.positiveReviews,
+      accountAgeDays:
+        input.accountAgeDays,
     });
 
-  const risk = analyzeRisk({
-    verified: data.verified,
-    disputes: data.disputes,
-    price: data.listingPrice,
-  });
+  const risk =
+    analyzeRisk({
+      verified:
+        input.verified,
+      companyVerified:
+        input.companyVerified,
+      disputes:
+        input.disputes,
+      price:
+        input.price,
+      completedEscrows:
+        input.completedEscrows,
+      accountAgeDays:
+        input.accountAgeDays,
+    });
+
+  const fraud =
+    runFraudChecks({
+      verified:
+        input.verified,
+      companyVerified:
+        input.companyVerified,
+      disputes:
+        input.disputes,
+      transactionAmount:
+        input.transactionAmount,
+      accountAgeDays:
+        input.accountAgeDays,
+      completedEscrows:
+        input.completedEscrows,
+    });
 
   let guardianDecision:
     | "allow"
     | "review"
-    | "block" = "allow";
+    | "block" =
+    "allow";
 
-  if (risk.riskScore >= 80) {
-    guardianDecision = "block";
-  } else if (
-    risk.riskScore >= 50
+  if (
+    fraud.flagged ||
+    risk.riskScore >= 70
   ) {
-    guardianDecision = "review";
+    guardianDecision =
+      "block";
+  } else if (
+    risk.riskScore >= 40
+  ) {
+    guardianDecision =
+      "review";
+  }
+
+  const summary: string[] =
+    [];
+
+  summary.push(
+    `Trust Score: ${trust.score}`,
+  );
+
+  summary.push(
+    `Risk Score: ${risk.riskScore}`,
+  );
+
+  if (
+    fraud.flagged
+  ) {
+    summary.push(
+      "Fraud indicators detected",
+    );
   }
 
   return {
     trust,
     risk,
+    fraud,
     guardianDecision,
+    summary,
   };
 }
 
 export function analyzeListing(
-  listing: {
+  input: {
+    title: string;
     price: number;
     sellerVerified: boolean;
   },
 ) {
-  let riskScore = 0;
+  let score = 0;
+
+  const reasons: string[] =
+    [];
 
   if (
-    !listing.sellerVerified
+    !input.sellerVerified
   ) {
-    riskScore += 30;
+    score += 30;
+
+    reasons.push(
+      "Seller not verified",
+    );
   }
 
   if (
-    listing.price > 500000
+    input.price >
+    1000000
   ) {
-    riskScore += 20;
+    score += 20;
+
+    reasons.push(
+      "High value listing",
+    );
   }
 
   return {
-    riskScore,
+    score,
+    reasons,
     recommendation:
-      riskScore >= 50
+      score >= 50
+        ? "review"
+        : "allow",
+  };
+}
+
+export function analyzeEscrow(
+  amount: number,
+) {
+  let risk = 0;
+
+  if (
+    amount > 1000000
+  ) {
+    risk += 25;
+  }
+
+  return {
+    risk,
+    recommendation:
+      risk > 20
         ? "review"
         : "allow",
   };
 }
 
 export function analyzeTransaction(
-  transaction: {
-    amount: number;
-    buyerVerified: boolean;
-    sellerVerified: boolean;
-  },
+  amount: number,
 ) {
-  let riskScore = 0;
+  let risk = 0;
 
   if (
-    !transaction.buyerVerified
+    amount > 500000
   ) {
-    riskScore += 25;
-  }
-
-  if (
-    !transaction.sellerVerified
-  ) {
-    riskScore += 25;
-  }
-
-  if (
-    transaction.amount >
-    1000000
-  ) {
-    riskScore += 30;
+    risk += 20;
   }
 
   return {
-    riskScore,
+    risk,
     recommendation:
-      riskScore >= 60
+      risk > 10
         ? "review"
         : "allow",
   };
