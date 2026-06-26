@@ -11,6 +11,11 @@ export * from "./linked_accounts";
 export * from "./certificates";
 
 export * from "./posts";
+export * from "./post_likes";
+export * from "./post_comments";
+
+export * from "./communities";
+export * from "./community_members";
 
 export * from "./listings";
 export * from "./listing_images";

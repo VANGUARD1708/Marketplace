@@ -37,6 +37,7 @@ import AIPage from "@/pages/AIPage";
 import SearchPage from "@/pages/SearchPage";
 
 import CommunitiesPage from "@/pages/CommunitiesPage";
+import CommunityDetailPage from "@/pages/CommunityDetailPage";
 import DeliveryPage from "@/pages/DeliveryPage";
 import GuardianPage from "@/pages/GuardianPage";
 import InvestmentPage from "@/pages/InvestmentPage";
@@ -53,16 +54,6 @@ const queryClient = new QueryClient({
     mutations: { retry: 0 },
   },
 });
-
-function AuthRoutes() {
-  return (
-    <Switch>
-      <Route path="/auth/login" component={LoginPage} />
-      <Route path="/auth/register" component={RegisterPage} />
-      <Route component={LoginPage} />
-    </Switch>
-  );
-}
 
 function Router() {
   return (
@@ -113,6 +104,7 @@ function Router() {
               <Route path="/search" component={SearchPage} />
 
               <Route path="/communities" component={CommunitiesPage} />
+              <Route path="/communities/:id" component={CommunityDetailPage} />
               <Route path="/delivery" component={DeliveryPage} />
               <Route path="/guardian" component={GuardianPage} />
               <Route path="/invest" component={InvestmentPage} />
