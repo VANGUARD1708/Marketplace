@@ -59,6 +59,6 @@ export * from "./admin_reports";
 
 /* Guardian AI Tables */
 export * from "./guardian_alerts";
-export * from "./risk_assessments";
+export * from "./risk_assesments";
 export * from "./fraud_cases";
 export * from "./guardian_actions";

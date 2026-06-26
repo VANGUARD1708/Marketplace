@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 
 import { apiFetch } from "@/lib/api";
-import TrustBadge from "@/components/trust/TrustBadge";
+import TrustBadge from "@/components/guardian/TrustBadge";
 
 type Profile = {
   id: number;
