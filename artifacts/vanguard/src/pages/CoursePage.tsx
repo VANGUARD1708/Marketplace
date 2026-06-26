@@ -1,8 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useParams, Link } from "wouter";
 import {
-  BookOpen, Star, Shield, CheckCircle, Loader2, ChevronLeft,
-  Users, Clock, Play, Lock, ArrowRight,
+  BookOpen, Shield, CheckCircle, Loader2, ChevronLeft,
+  Users, Clock, Play, Lock, ArrowRight, CheckCircle2,
 } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 
@@ -13,7 +13,9 @@ type Course = {
   category?: string; price: string; duration?: string; lessonCount?: number;
   enrollmentCount?: number; status: string; createdAt: string;
 };
-type Lesson = { id: number; courseId: number; title: string; duration?: string; order: number; isFree: boolean };
+type Lesson = { id: number; courseId: number; title: string; content?: string; duration?: string; order: number; isFree: boolean };
+type Enrollment = { id: number; courseId: number; studentId: number; status: string; enrolledAt: string };
+type Progress = { id: number; enrollmentId: number; lessonId: number; completed: boolean; completedAt: string | null };
 type TrustData = { trustScore: number; level: string };
 
 export default function CoursePage() {
@@ -38,12 +40,59 @@ export default function CoursePage() {
     enabled: Boolean(course?.instructorId),
   });
 
+  // Check if current user is already enrolled
+  const { data: myEnrollments = [], refetch: refetchEnrollment } = useQuery({
+    queryKey: ["myEnrollment", id, ME],
+    queryFn: () => apiFetch<Enrollment[]>(`/courses/${id}/enrollments?studentId=${ME}`),
+    enabled: Boolean(id),
+  });
+  const enrollment = myEnrollments[0] ?? null;
+
+  // Fetch lesson progress if enrolled
+  const { data: progressRecords = [], refetch: refetchProgress } = useQuery({
+    queryKey: ["progress", id, enrollment?.id],
+    queryFn: () => apiFetch<Progress[]>(`/courses/${id}/progress?enrollmentId=${enrollment!.id}`),
+    enabled: Boolean(enrollment),
+  });
+
+  const completedIds = new Set(progressRecords.filter((p) => p.completed).map((p) => p.lessonId));
+  const progressPct = lessons.length > 0 ? Math.round((completedIds.size / lessons.length) * 100) : 0;
+
   const enroll = useMutation({
     mutationFn: () => apiFetch(`/courses/${id}/enroll`, {
       method: "POST",
       body: JSON.stringify({ userId: ME }),
     }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["course", id] }),
+    onSuccess: () => {
+      refetchEnrollment();
+      qc.invalidateQueries({ queryKey: ["course", id] });
+    },
+  });
+
+  const markComplete = useMutation({
+    mutationFn: (lessonId: number) => apiFetch(`/courses/${id}/progress`, {
+      method: "POST",
+      body: JSON.stringify({
+        enrollmentId: enrollment!.id,
+        studentId: ME,
+        lessonId,
+        completed: true,
+      }),
+    }),
+    onSuccess: () => refetchProgress(),
+  });
+
+  const markIncomplete = useMutation({
+    mutationFn: (lessonId: number) => apiFetch(`/courses/${id}/progress`, {
+      method: "POST",
+      body: JSON.stringify({
+        enrollmentId: enrollment!.id,
+        studentId: ME,
+        lessonId,
+        completed: false,
+      }),
+    }),
+    onSuccess: () => refetchProgress(),
   });
 
   if (isLoading) {
@@ -60,13 +109,9 @@ export default function CoursePage() {
     );
   }
 
-  const WHAT_YOULL_LEARN = [
-    "Practical skills you can apply immediately",
-    "Industry-standard techniques",
-    "Expert-guided, structured learning",
-    "Certificate on completion",
-    "Guardian-verified content",
-  ];
+  const isOwnCourse = course.instructorId === ME;
+  const isEnrolled = Boolean(enrollment);
+  const sortedLessons = [...lessons].sort((a, b) => a.order - b.order);
 
   return (
     <div className="p-4 md:p-6 max-w-5xl mx-auto">
@@ -92,57 +137,76 @@ export default function CoursePage() {
           {/* Title + meta */}
           <div>
             <h1 className="text-2xl font-bold mb-2">{course.title}</h1>
-            <div className="flex flex-wrap gap-3 text-sm text-muted-foreground mb-2">
-              {course.lessonCount && <span className="flex items-center gap-1"><BookOpen className="h-3.5 w-3.5" /> {course.lessonCount} lessons</span>}
+            <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
+              {(course.lessonCount ?? 0) > 0 && <span className="flex items-center gap-1"><BookOpen className="h-3.5 w-3.5" /> {course.lessonCount} lessons</span>}
               {course.duration && <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" /> {course.duration}</span>}
-              {course.enrollmentCount && <span className="flex items-center gap-1"><Users className="h-3.5 w-3.5" /> {course.enrollmentCount.toLocaleString()} students</span>}
-            </div>
-            <div className="flex items-center gap-1">
-              {[1,2,3,4,5].map((s) => <Star key={s} className="h-4 w-4 text-amber-400 fill-amber-400" />)}
-              <span className="text-sm font-medium ml-1">4.7</span>
-              <span className="text-sm text-muted-foreground">(238 reviews)</span>
+              {(course.enrollmentCount ?? 0) > 0 && <span className="flex items-center gap-1"><Users className="h-3.5 w-3.5" /> {course.enrollmentCount!.toLocaleString()} students</span>}
             </div>
           </div>
 
-          {/* What you'll learn */}
-          <div className="rounded-2xl border bg-card p-5">
-            <h3 className="font-semibold mb-3">What You'll Learn</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {WHAT_YOULL_LEARN.map((item) => (
-                <div key={item} className="flex items-start gap-2 text-sm">
-                  <CheckCircle className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" /> {item}
-                </div>
-              ))}
+          {/* Progress bar — only shown if enrolled */}
+          {isEnrolled && lessons.length > 0 && (
+            <div className="rounded-2xl border bg-card p-5">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="font-semibold text-sm">Your Progress</h3>
+                <span className="text-sm font-bold text-primary">{progressPct}%</span>
+              </div>
+              <div className="w-full bg-muted rounded-full h-2.5 mb-2">
+                <div
+                  className="bg-primary h-2.5 rounded-full transition-all duration-500"
+                  style={{ width: `${progressPct}%` }}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">{completedIds.size} of {lessons.length} lessons completed</p>
             </div>
-          </div>
+          )}
 
           {/* Description */}
-          <div className="rounded-2xl border bg-card p-5">
-            <h3 className="font-semibold mb-3">Course Description</h3>
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              {course.description ?? "No description provided."}
-            </p>
-          </div>
+          {course.description && (
+            <div className="rounded-2xl border bg-card p-5">
+              <h3 className="font-semibold mb-3">Course Description</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                {course.description}
+              </p>
+            </div>
+          )}
 
           {/* Lessons */}
           <div className="rounded-2xl border bg-card p-5">
             <h3 className="font-semibold mb-4">Course Content</h3>
-            {lessons.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Lesson list will appear here.</p>
+            {sortedLessons.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No lessons available yet.</p>
             ) : (
               <div className="space-y-2">
-                {lessons.sort((a, b) => a.order - b.order).map((lesson) => (
-                  <div key={lesson.id} className="flex items-center gap-3 py-2 border-b last:border-0">
-                    <div className={`h-8 w-8 rounded-lg flex items-center justify-center shrink-0 ${lesson.isFree ? "bg-emerald-100" : "bg-muted"}`}>
-                      {lesson.isFree ? <Play className="h-3.5 w-3.5 text-emerald-600" /> : <Lock className="h-3.5 w-3.5 text-muted-foreground" />}
+                {sortedLessons.map((lesson) => {
+                  const isDone = completedIds.has(lesson.id);
+                  const canAccess = isEnrolled || lesson.isFree;
+                  return (
+                    <div key={lesson.id} className={`flex items-center gap-3 py-2.5 px-1 border-b last:border-0 rounded-lg ${isDone ? "bg-emerald-50/50" : ""}`}>
+                      <div className={`h-8 w-8 rounded-lg flex items-center justify-center shrink-0 ${isDone ? "bg-emerald-100" : lesson.isFree ? "bg-primary/10" : "bg-muted"}`}>
+                        {isDone
+                          ? <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                          : canAccess
+                            ? <Play className="h-3.5 w-3.5 text-primary" />
+                            : <Lock className="h-3.5 w-3.5 text-muted-foreground" />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-sm font-medium truncate ${isDone ? "text-emerald-800" : ""}`}>{lesson.title}</p>
+                        {lesson.duration && <p className="text-xs text-muted-foreground">{lesson.duration}</p>}
+                      </div>
+                      {lesson.isFree && !isEnrolled && <span className="text-xs text-primary font-medium shrink-0">Free preview</span>}
+                      {isEnrolled && (
+                        <button
+                          onClick={() => isDone ? markIncomplete.mutate(lesson.id) : markComplete.mutate(lesson.id)}
+                          disabled={markComplete.isPending || markIncomplete.isPending}
+                          className={`text-xs font-medium px-2.5 py-1 rounded-lg shrink-0 transition ${isDone ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-200" : "border hover:bg-muted"}`}
+                        >
+                          {isDone ? "Completed ✓" : "Mark done"}
+                        </button>
+                      )}
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{lesson.title}</p>
-                      {lesson.duration && <p className="text-xs text-muted-foreground">{lesson.duration}</p>}
-                    </div>
-                    {lesson.isFree && <span className="text-xs text-emerald-600 font-medium shrink-0">Free preview</span>}
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
@@ -169,24 +233,37 @@ export default function CoursePage() {
               </div>
             </Link>
 
-            <div className="space-y-2">
-              <button onClick={() => enroll.mutate()} disabled={enroll.isPending || course.status !== "published"}
-                className="w-full rounded-xl bg-primary text-primary-foreground py-3 font-semibold flex items-center justify-center gap-2 disabled:opacity-50">
-                {enroll.isPending ? <><Loader2 className="h-4 w-4 animate-spin" /> Enrolling…</> : "Enroll Now"}
-              </button>
-              {enroll.isSuccess && (
-                <p className="text-xs text-emerald-600 text-center flex items-center justify-center gap-1">
-                  <CheckCircle className="h-3.5 w-3.5" /> Enrolled! Start learning.
-                </p>
-              )}
-            </div>
+            {/* Enroll / Enrolled state */}
+            {isOwnCourse ? (
+              <div className="w-full rounded-xl border bg-muted py-3 text-center text-sm text-muted-foreground font-medium">
+                You created this course
+              </div>
+            ) : isEnrolled ? (
+              <div className="space-y-2">
+                <div className="w-full rounded-xl bg-emerald-100 border border-emerald-200 py-3 text-center text-sm font-semibold text-emerald-800 flex items-center justify-center gap-2">
+                  <CheckCircle className="h-4 w-4" /> Enrolled
+                </div>
+                {progressPct === 100 && (
+                  <p className="text-xs text-emerald-600 text-center font-medium">🎉 Course completed!</p>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <button onClick={() => enroll.mutate()} disabled={enroll.isPending || course.status !== "published"}
+                  className="w-full rounded-xl bg-primary text-primary-foreground py-3 font-semibold flex items-center justify-center gap-2 disabled:opacity-50">
+                  {enroll.isPending ? <><Loader2 className="h-4 w-4 animate-spin" /> Enrolling…</> : "Enroll Now"}
+                </button>
+                {enroll.error && (
+                  <p className="text-xs text-destructive text-center">{(enroll.error as Error).message}</p>
+                )}
+              </div>
+            )}
 
             <div className="mt-4 space-y-2 text-sm">
               {[
                 { label: "Lessons", value: course.lessonCount ?? "—" },
                 { label: "Duration", value: course.duration ?? "Self-paced" },
                 { label: "Students", value: course.enrollmentCount?.toLocaleString() ?? "0" },
-                { label: "Certificate", value: "Yes" },
               ].map(({ label, value }) => (
                 <div key={label} className="flex justify-between text-sm">
                   <span className="text-muted-foreground">{label}</span>

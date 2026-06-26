@@ -14,13 +14,13 @@ type Job = {
   requirements?: string; jobType?: string; location?: string;
   salaryMin?: string; salaryMax?: string; skills?: string; status: string; createdAt: string;
 };
+type Application = { id: number; jobId: number; applicantId: number; coverLetter: string | null; status: string; createdAt: string };
 type TrustData = { trustScore: number; level: string; badges: string[] };
 
 export default function JobPage() {
   const { id } = useParams<{ id: string }>();
   const qc = useQueryClient();
   const [cover, setCover] = useState("");
-  const [applied, setApplied] = useState(false);
 
   const { data: job, isLoading, error } = useQuery({
     queryKey: ["job", id],
@@ -34,12 +34,24 @@ export default function JobPage() {
     enabled: Boolean(job?.employerId),
   });
 
+  // Check whether the current user has already applied — persisted in the DB
+  const { data: myApplications = [], refetch: refetchMyApp } = useQuery({
+    queryKey: ["myApplication", id, ME],
+    queryFn: () => apiFetch<Application[]>(`/jobs/${id}/applications?applicantId=${ME}`),
+    enabled: Boolean(id),
+  });
+
+  const myApplication = myApplications[0] ?? null;
+
   const apply = useMutation({
     mutationFn: () => apiFetch(`/jobs/${id}/apply`, {
       method: "POST",
       body: JSON.stringify({ applicantId: ME, coverLetter: cover }),
     }),
-    onSuccess: () => { setApplied(true); qc.invalidateQueries({ queryKey: ["job", id] }); },
+    onSuccess: () => {
+      refetchMyApp();
+      qc.invalidateQueries({ queryKey: ["job", id] });
+    },
   });
 
   if (isLoading) {
@@ -58,6 +70,17 @@ export default function JobPage() {
 
   const skills = job.skills ? job.skills.split(",").map((s) => s.trim()) : [];
   const requirements = job.requirements ? job.requirements.split("\n").filter(Boolean) : [];
+  const isOwnJob = job.employerId === ME;
+  const alreadyApplied = Boolean(myApplication);
+
+  function statusBadge(status: string) {
+    const map: Record<string, string> = {
+      pending: "text-amber-700 bg-amber-50 border-amber-200",
+      accepted: "text-emerald-700 bg-emerald-50 border-emerald-200",
+      rejected: "text-red-700 bg-red-50 border-red-200",
+    };
+    return map[status] ?? "text-muted-foreground bg-muted border-border";
+  }
 
   return (
     <div className="p-4 md:p-6 max-w-4xl mx-auto">
@@ -135,8 +158,27 @@ export default function JobPage() {
             </div>
           )}
 
-          {/* Apply */}
-          {!applied ? (
+          {/* Apply / Application status */}
+          {isOwnJob ? (
+            <div className="rounded-2xl border bg-muted p-5">
+              <p className="text-sm text-muted-foreground text-center">This is your job posting. Applicants will appear in your employer dashboard.</p>
+            </div>
+          ) : alreadyApplied ? (
+            <div className={`rounded-2xl border p-5 flex items-center gap-3 ${statusBadge(myApplication!.status)}`}>
+              <CheckCircle2 className="h-6 w-6 shrink-0" />
+              <div>
+                <p className="font-semibold">Application {myApplication!.status === "pending" ? "Submitted" : myApplication!.status.charAt(0).toUpperCase() + myApplication!.status.slice(1)}</p>
+                <p className="text-sm mt-0.5">
+                  {myApplication!.status === "pending" && "The employer will review your application and get back to you."}
+                  {myApplication!.status === "accepted" && "Congratulations! Your application has been accepted."}
+                  {myApplication!.status === "rejected" && "Unfortunately your application was not selected this time."}
+                </p>
+                {myApplication!.coverLetter && (
+                  <p className="text-xs mt-2 opacity-75">Your cover letter: "{myApplication!.coverLetter.substring(0, 80)}{myApplication!.coverLetter.length > 80 ? "…" : ""}"</p>
+                )}
+              </div>
+            </div>
+          ) : (
             <div className="rounded-2xl border bg-card p-5">
               <h3 className="font-semibold mb-3 flex items-center gap-2"><Send className="h-4 w-4" /> Apply for this Job</h3>
               <div className="mb-3">
@@ -150,14 +192,6 @@ export default function JobPage() {
                 {apply.isPending ? <><Loader2 className="h-4 w-4 animate-spin" /> Submitting…</> : "Submit Application"}
               </button>
               {apply.error && <p className="text-xs text-destructive mt-2">{(apply.error as Error).message}</p>}
-            </div>
-          ) : (
-            <div className="rounded-2xl border bg-emerald-50 border-emerald-200 p-5 flex items-center gap-3">
-              <CheckCircle2 className="h-6 w-6 text-emerald-600 shrink-0" />
-              <div>
-                <p className="font-semibold text-emerald-800">Application Submitted!</p>
-                <p className="text-sm text-emerald-700">The employer will review your application and get back to you.</p>
-              </div>
             </div>
           )}
         </div>

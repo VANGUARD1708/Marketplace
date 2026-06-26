@@ -7,6 +7,8 @@ export const jobsTable = pgTable("jobs", {
   employerId: integer("employer_id").notNull(),
   title: text("title").notNull(),
   description: text("description"),
+  jobType: text("job_type"),
+  skills: text("skills"),
   budgetMin: numeric("budget_min", { precision: 10, scale: 2 }),
   budgetMax: numeric("budget_max", { precision: 10, scale: 2 }),
   location: text("location"),

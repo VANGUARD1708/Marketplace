@@ -122,9 +122,9 @@ export default function CoursesPage() {
                   <span className="text-xs text-muted-foreground">(4.7)</span>
                 </div>
                 <div className="flex flex-wrap gap-2 text-xs text-muted-foreground mb-3">
-                  {course.lessonCount && <span className="flex items-center gap-1"><BookOpen className="h-3 w-3" /> {course.lessonCount} lessons</span>}
+                  {(course.lessonCount ?? 0) > 0 && <span className="flex items-center gap-1"><BookOpen className="h-3 w-3" /> {course.lessonCount} lessons</span>}
                   {course.duration && <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {course.duration}</span>}
-                  {course.enrollmentCount && <span className="flex items-center gap-1"><Users className="h-3 w-3" /> {course.enrollmentCount} students</span>}
+                  {(course.enrollmentCount ?? 0) > 0 && <span className="flex items-center gap-1"><Users className="h-3 w-3" /> {course.enrollmentCount} students</span>}
                 </div>
                 <div className="flex items-center justify-between">
                   <p className="text-primary font-bold">₦{Number(course.price).toLocaleString()}</p>
