@@ -6,7 +6,11 @@ import {
 import { apiFetch } from "@/lib/api";
 
 type AdminStats = { users: number; listings: number; escrows: number; disputes: number; verifications: number; reports: number };
-type VerificationRequest = { id: number; userId: number; type: string; status: string; createdAt: string };
+type VerificationRequest = {
+  id: number; userId: number; type: string; status: string; submittedAt: string;
+  documentUrls?: string[]; reviewNotes?: string;
+  user?: { id: number; email: string; username: string } | null;
+};
 type DisputeItem = { id: number; buyerId: number; sellerId: number; reason?: string; status: string; createdAt: string };
 type GuardianAlert = { id: number; entityType: string; entityId: number; alertType: string; riskLevel: string; isResolved: boolean; createdAt: string };
 
@@ -18,17 +22,20 @@ import { useState } from "react";
 export default function AdminPage() {
   const qc = useQueryClient();
   const [tab, setTab] = useState<Tab>("Overview");
+  const [rejectReason, setRejectReason] = useState<Record<number, string>>({});
 
   const { data: stats, isLoading: loadingStats } = useQuery({
     queryKey: ["admin-stats"],
     queryFn: () => apiFetch<AdminStats>("/admin/stats"),
   });
 
-  const { data: verifications = [], isLoading: loadingVerif } = useQuery({
+  const { data: allVerifications = [], isLoading: loadingVerif } = useQuery({
     queryKey: ["admin-verifications"],
-    queryFn: () => apiFetch<VerificationRequest[]>("/verification?status=pending"),
+    queryFn: () => apiFetch<VerificationRequest[]>("/verification/requests"),
     enabled: tab === "Verifications",
   });
+
+  const verifications = allVerifications.filter((v) => v.status === "pending" || v.status === "under_review");
 
   const { data: disputes = [], isLoading: loadingDisputes } = useQuery({
     queryKey: ["admin-disputes"],
@@ -42,13 +49,12 @@ export default function AdminPage() {
     enabled: tab === "Guardian",
   });
 
-  const approveVerif = useMutation({
-    mutationFn: (id: number) => apiFetch(`/verification/${id}/approve`, { method: "POST" }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-verifications"] }),
-  });
-
-  const rejectVerif = useMutation({
-    mutationFn: (id: number) => apiFetch(`/verification/${id}/reject`, { method: "POST" }),
+  const reviewVerif = useMutation({
+    mutationFn: ({ id, status, reason }: { id: number; status: string; reason?: string }) =>
+      apiFetch(`/verification/requests/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ status, reason }),
+      }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-verifications"] }),
   });
 
@@ -145,22 +151,59 @@ export default function AdminPage() {
           )}
           <div className="space-y-3">
             {verifications.map((v) => (
-              <div key={v.id} className="rounded-xl border bg-card p-4 flex items-center justify-between gap-4">
-                <div>
-                  <p className="font-medium text-sm">Verification #{v.id}</p>
-                  <p className="text-xs text-muted-foreground">User #{v.userId} · {v.type} · {new Date(v.createdAt).toLocaleDateString()}</p>
+              <div key={v.id} className="rounded-xl border bg-card p-4 space-y-3">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="font-medium text-sm capitalize">{v.type} Verification #{v.id}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {v.user ? `${v.user.username} (${v.user.email})` : `User #${v.userId}`}
+                      {" · "}{new Date(v.submittedAt).toLocaleDateString()}
+                    </p>
+                    {(v.documentUrls ?? []).length > 0 && (
+                      <div className="mt-1 space-y-0.5">
+                        {(v.documentUrls ?? []).map((filename, i) => (
+                          <a
+                            key={i}
+                            href={`/api/verification/document/${v.id}/${encodeURIComponent(filename)}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="block text-xs text-primary hover:underline truncate"
+                          >
+                            📄 Document {i + 1}: {filename}
+                          </a>
+                        ))}
+                      </div>
+                    )}
+                    <span className={`inline-block mt-1 text-xs px-2 py-0.5 rounded-full font-medium ${
+                      v.status === "under_review" ? "bg-blue-100 text-blue-700" : "bg-amber-100 text-amber-700"
+                    }`}>{v.status === "under_review" ? "Under Review" : "Pending"}</span>
+                  </div>
+                  <div className="flex gap-2 shrink-0">
+                    <button
+                      onClick={() => reviewVerif.mutate({ id: v.id, status: "under_review" })}
+                      disabled={reviewVerif.isPending || v.status === "under_review"}
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-medium disabled:opacity-50">
+                      <UserCheck className="h-3.5 w-3.5" /> Review
+                    </button>
+                    <button
+                      onClick={() => reviewVerif.mutate({ id: v.id, status: "approved" })}
+                      disabled={reviewVerif.isPending}
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-medium disabled:opacity-50">
+                      <CheckCircle className="h-3.5 w-3.5" /> Approve
+                    </button>
+                  </div>
                 </div>
                 <div className="flex gap-2">
+                  <input
+                    placeholder="Rejection reason (optional)"
+                    value={rejectReason[v.id] ?? ""}
+                    onChange={(e) => setRejectReason((prev) => ({ ...prev, [v.id]: e.target.value }))}
+                    className="flex-1 rounded-lg border bg-background px-3 py-1.5 text-xs outline-none focus:ring-2 focus:ring-destructive/20"
+                  />
                   <button
-                    onClick={() => approveVerif.mutate(v.id)}
-                    disabled={approveVerif.isPending}
-                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-medium disabled:opacity-50">
-                    <CheckCircle className="h-3.5 w-3.5" /> Approve
-                  </button>
-                  <button
-                    onClick={() => rejectVerif.mutate(v.id)}
-                    disabled={rejectVerif.isPending}
-                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-red-600 text-white text-xs font-medium disabled:opacity-50">
+                    onClick={() => reviewVerif.mutate({ id: v.id, status: "rejected", reason: rejectReason[v.id] })}
+                    disabled={reviewVerif.isPending}
+                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-red-600 text-white text-xs font-medium disabled:opacity-50 shrink-0">
                     <XCircle className="h-3.5 w-3.5" /> Reject
                   </button>
                 </div>

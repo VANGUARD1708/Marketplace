@@ -37,6 +37,21 @@ function TrustBadge({ badge }: { badge: string }) {
   );
 }
 
+function VerificationBadge({ status, type }: { status?: string; type?: string | null }) {
+  if (status !== "approved") return null;
+  const labels: Record<string, string> = {
+    identity: "ID Verified",
+    business: "Business Verified",
+    professional: "Professional Verified",
+  };
+  return (
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700 border border-emerald-200">
+      <ShieldCheck className="h-3 w-3" />
+      {type ? (labels[type] ?? "Verified") : "Verified"}
+    </span>
+  );
+}
+
 function TrustRing({ score }: { score: number }) {
   const color = score >= 80 ? "#10b981" : score >= 60 ? "#3b82f6" : score >= 40 ? "#f59e0b" : "#ef4444";
   return (
@@ -94,6 +109,13 @@ export default function ProfilePage() {
     queryFn: () => apiFetch<Certificate[]>(`/profiles/${userId}/certificates`),
     enabled: tab === "Certificates",
   });
+
+  const { data: verifSummary } = useQuery({
+    queryKey: ["verif-summary", userId],
+    queryFn: () => apiFetch<{ userId: number; isVerified: boolean; verificationType: string | null; status: string }>(`/verification/summary/${userId}`),
+  });
+
+  const approvedVerif = verifSummary?.isVerified ? { status: "approved", type: verifSummary.verificationType } : null;
 
   const follow = useMutation({
     mutationFn: () => apiFetch(`/profiles/${userId}/follow`, { method: "POST", body: JSON.stringify({ followerId: 1 }) }),
@@ -169,6 +191,7 @@ export default function ProfilePage() {
             </div>
 
             <div className="flex flex-wrap gap-2 mb-3">
+              <VerificationBadge status={approvedVerif?.status} type={approvedVerif?.type} />
               {trust?.badges.map((b) => <TrustBadge key={b} badge={b.toLowerCase().replace(/ /g, "_")} />)}
             </div>
 

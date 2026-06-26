@@ -18,7 +18,7 @@ export default function LoginPage() {
     setIsLoading(true);
     try {
       const res = await authApi.login({ email, password });
-      localStorage.setItem("vanguard_token", res.token);
+      
       navigate("/");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Invalid email or password");

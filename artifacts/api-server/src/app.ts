@@ -1,6 +1,8 @@
 import express, {
   type Express,
 } from "express";
+import path from "path";
+import fs from "fs";
 
 import cors from "cors";
 import helmet from "helmet";
@@ -105,6 +107,14 @@ app.use(
   "/api/auth",
   authLimiter,
 );
+
+/*
+ * Ensure uploads directory exists at startup
+ */
+const uploadsDir = process.env.UPLOADS_DIR ?? path.join(process.cwd(), "uploads", "documents");
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
 
 /*
  * API Routes

@@ -23,7 +23,7 @@ export default function RegisterPage() {
     setIsLoading(true);
     try {
       const res = await authApi.register({ email, username, password });
-      localStorage.setItem("vanguard_token", res.token);
+      
       navigate("/");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Registration failed. Try again.");

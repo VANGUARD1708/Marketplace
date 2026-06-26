@@ -37,20 +37,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function login(email: string, password: string) {
     const res = await authApi.login({ email, password });
-    localStorage.setItem(TOKEN_KEY, res.token);
-    setToken(res.token);
+    localStorage.setItem(TOKEN_KEY, res.accessToken);
+    setToken(res.accessToken);
     setUser(res.user);
   }
 
   async function register(email: string, username: string, password: string) {
     const res = await authApi.register({ email, username, password });
-    localStorage.setItem(TOKEN_KEY, res.token);
-    setToken(res.token);
+    localStorage.setItem(TOKEN_KEY, res.accessToken);
+    setToken(res.accessToken);
     setUser(res.user);
   }
 
   function logout() {
+    authApi.logout().catch(() => {});
     localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem("vanguard_refresh_token");
     setToken(null);
     setUser(null);
   }

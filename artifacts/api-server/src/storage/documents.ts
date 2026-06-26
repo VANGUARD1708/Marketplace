@@ -1,5 +1,16 @@
+import fs from "fs";
+import path from "path";
+import multer from "multer";
 import { generateFilename } from "./upload";
 import { logger } from "../lib/logger";
+
+const UPLOADS_DIR = process.env.UPLOADS_DIR ?? path.join(process.cwd(), "uploads", "documents");
+
+function ensureDir(dir: string) {
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+}
 
 export interface DocumentMetadata {
   filename: string;
@@ -16,22 +27,60 @@ export async function storeDocument(
   buffer: Buffer,
   originalName: string,
   type: DocumentType,
-  userId: number
+  userId: number,
+  mimetype = "application/octet-stream",
 ): Promise<DocumentMetadata> {
-  const filename = `${type}/${userId}/${generateFilename(originalName)}`;
-  logger.info({ filename, type, userId }, "Document stored (stub — wire to S3/Cloudinary in production)");
+  const subDir = path.join(UPLOADS_DIR, type, String(userId));
+  ensureDir(subDir);
+
+  const filename = generateFilename(originalName);
+  const filePath = path.join(subDir, filename);
+
+  await fs.promises.writeFile(filePath, buffer);
+
+  const relPath = path.join(type, String(userId), filename);
+  const url = `/api/uploads/documents/${relPath}`;
+
+  logger.info({ filePath, type, userId }, "Document stored to disk");
 
   return {
-    filename,
+    filename: relPath,
     originalName,
-    mimetype: "application/pdf",
+    mimetype,
     size: buffer.length,
     uploadedAt: new Date(),
-    url: `/documents/${filename}`,
+    url,
   };
 }
 
 export function getDocumentUrl(filename: string): string {
-  const base = process.env.STORAGE_BASE_URL ?? "/uploads";
-  return `${base}/${filename}`;
+  return `/api/uploads/documents/${filename}`;
+}
+
+export function getDocumentPath(filename: string): string {
+  return path.join(UPLOADS_DIR, filename);
+}
+
+export function createMulterUpload(allowedMimetypes?: string[]) {
+  const storage = multer.diskStorage({
+    destination: (_req, _file, cb) => {
+      ensureDir(UPLOADS_DIR);
+      cb(null, UPLOADS_DIR);
+    },
+    filename: (_req, file, cb) => {
+      cb(null, generateFilename(file.originalname));
+    },
+  });
+
+  return multer({
+    storage,
+    limits: { fileSize: 10 * 1024 * 1024 },
+    fileFilter: (_req, file, cb) => {
+      if (!allowedMimetypes || allowedMimetypes.includes(file.mimetype)) {
+        cb(null, true);
+      } else {
+        cb(new Error(`File type not allowed: ${file.mimetype}`));
+      }
+    },
+  });
 }

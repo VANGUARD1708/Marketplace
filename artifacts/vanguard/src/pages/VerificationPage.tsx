@@ -1,16 +1,14 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   ShieldCheck, FileText, Building2, User, Award, CheckCircle2,
-  Clock, XCircle, Loader2, ChevronRight, Upload,
+  Clock, XCircle, Loader2, ChevronRight, Upload, X, File,
 } from "lucide-react";
-import { apiFetch } from "@/lib/api";
-
-const ME = 1;
+import { apiFetch, apiUpload } from "@/lib/api";
 
 type VerifRequest = {
   id: number; userId: number; type: string; status: string;
-  notes?: string; createdAt: string;
+  reviewNotes?: string; documentUrls?: string[]; submittedAt: string;
 };
 
 type VerifType = {
@@ -47,9 +45,10 @@ const VERIF_TYPES: VerifType[] = [
 
 function StatusBadge({ status }: { status: string }) {
   const cfg: Record<string, { label: string; color: string; icon: typeof CheckCircle2 }> = {
-    pending:  { label: "Pending Review", color: "bg-amber-100 text-amber-700", icon: Clock },
-    approved: { label: "Approved", color: "bg-emerald-100 text-emerald-700", icon: CheckCircle2 },
-    rejected: { label: "Rejected", color: "bg-red-100 text-red-700", icon: XCircle },
+    pending:      { label: "Pending Review", color: "bg-amber-100 text-amber-700", icon: Clock },
+    under_review: { label: "Under Review",   color: "bg-blue-100 text-blue-700",   icon: Clock },
+    approved:     { label: "Approved",        color: "bg-emerald-100 text-emerald-700", icon: CheckCircle2 },
+    rejected:     { label: "Rejected",        color: "bg-red-100 text-red-700",     icon: XCircle },
   };
   const c = cfg[status] ?? cfg.pending;
   const Icon = c.icon;
@@ -60,27 +59,91 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
+function FileDropZone({
+  label,
+  files,
+  onAdd,
+  onRemove,
+}: {
+  label: string;
+  files: File[];
+  onAdd: (f: File) => void;
+  onRemove: (idx: number) => void;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    const dropped = Array.from(e.dataTransfer.files)[0];
+    if (dropped) onAdd(dropped);
+  };
+
+  return (
+    <div className="space-y-2">
+      <div
+        className="border-2 border-dashed rounded-xl p-4 flex items-center gap-3 text-sm text-muted-foreground hover:border-primary/60 hover:bg-primary/5 transition cursor-pointer"
+        onClick={() => inputRef.current?.click()}
+        onDragOver={(e) => e.preventDefault()}
+        onDrop={handleDrop}
+      >
+        <Upload className="h-4 w-4 shrink-0 text-primary" />
+        <span className="flex-1">{label}</span>
+        <span className="text-xs bg-muted px-2 py-0.5 rounded-full">Browse</span>
+        <input
+          ref={inputRef}
+          type="file"
+          className="hidden"
+          accept="image/jpeg,image/png,image/webp,application/pdf"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) { onAdd(f); e.target.value = ""; }
+          }}
+        />
+      </div>
+      {files.map((f, i) => (
+        <div key={i} className="flex items-center gap-2 bg-muted/60 rounded-lg px-3 py-2 text-xs">
+          <File className="h-3.5 w-3.5 text-primary shrink-0" />
+          <span className="flex-1 truncate">{f.name}</span>
+          <span className="text-muted-foreground">{(f.size / 1024).toFixed(0)} KB</span>
+          <button onClick={() => onRemove(i)} className="text-muted-foreground hover:text-destructive">
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function VerificationPage() {
   const qc = useQueryClient();
   const [selected, setSelected] = useState<VerifType | null>(null);
-  const [certNumber, setCertNumber] = useState("");
+  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
 
   const { data: requests = [], isLoading } = useQuery({
-    queryKey: ["verif-requests", ME],
-    queryFn: () => apiFetch<VerifRequest[]>(`/verification?userId=${ME}`),
+    queryKey: ["verif-status"],
+    queryFn: () => apiFetch<VerifRequest[]>("/verification/status"),
+    refetchInterval: 30_000,
   });
 
   const submit = useMutation({
-    mutationFn: (data: { type: string; certNumber?: string }) =>
-      apiFetch("/verification", { method: "POST", body: JSON.stringify({ userId: ME, ...data }) }),
+    mutationFn: async ({ type, files }: { type: string; files: File[] }) => {
+      const formData = new FormData();
+      formData.append("type", type);
+      files.forEach((f) => formData.append("documents", f));
+      return apiUpload("/verification/submit", formData);
+    },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["verif-requests", ME] });
+      qc.invalidateQueries({ queryKey: ["verif-status"] });
       setSelected(null);
-      setCertNumber("");
+      setUploadedFiles([]);
     },
   });
 
-  const pending = requests.filter((r) => r.status === "pending");
+  const handleSubmit = () => {
+    if (!selected) return;
+    submit.mutate({ type: selected.id, files: uploadedFiles });
+  };
+
   const approved = requests.filter((r) => r.status === "approved");
 
   return (
@@ -90,7 +153,6 @@ export default function VerificationPage() {
         <p className="text-sm text-muted-foreground">Increase trust and unlock verified badges</p>
       </div>
 
-      {/* Current status */}
       {approved.length > 0 && (
         <div className="rounded-2xl bg-emerald-50 border border-emerald-200 p-5 mb-6 flex items-start gap-4">
           <ShieldCheck className="h-8 w-8 text-emerald-600 shrink-0 mt-0.5" />
@@ -103,8 +165,12 @@ export default function VerificationPage() {
         </div>
       )}
 
-      {/* Active requests */}
-      {isLoading && <div className="flex justify-center py-4"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>}
+      {isLoading && (
+        <div className="flex justify-center py-4">
+          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+        </div>
+      )}
+
       {requests.length > 0 && (
         <div className="rounded-2xl border bg-card p-5 mb-6">
           <h3 className="font-semibold mb-3">Your Requests</h3>
@@ -113,8 +179,15 @@ export default function VerificationPage() {
               <div key={r.id} className="flex items-center justify-between py-2 border-b last:border-0">
                 <div>
                   <p className="text-sm font-medium capitalize">{r.type} Verification</p>
-                  <p className="text-xs text-muted-foreground">{new Date(r.createdAt).toLocaleDateString()}</p>
-                  {r.notes && <p className="text-xs text-red-600 mt-0.5">{r.notes}</p>}
+                  <p className="text-xs text-muted-foreground">{new Date(r.submittedAt).toLocaleDateString()}</p>
+                  {r.reviewNotes && (
+                    <p className="text-xs text-red-600 mt-0.5">Note: {r.reviewNotes}</p>
+                  )}
+                  {r.documentUrls && r.documentUrls.length > 0 && (
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {r.documentUrls.length} document{r.documentUrls.length > 1 ? "s" : ""} submitted
+                    </p>
+                  )}
                 </div>
                 <StatusBadge status={r.status} />
               </div>
@@ -123,17 +196,22 @@ export default function VerificationPage() {
         </div>
       )}
 
-      {/* Select verification type */}
       {!selected && (
         <div>
           <h3 className="font-semibold mb-3">Apply for Verification</h3>
           <div className="space-y-3">
             {VERIF_TYPES.map((v) => {
               const Icon = v.icon;
-              const alreadyApplied = requests.some((r) => r.type === v.id && r.status !== "rejected");
+              const alreadyApplied = requests.some(
+                (r) => r.type === v.id && r.status !== "rejected",
+              );
               return (
-                <button key={v.id} onClick={() => !alreadyApplied && setSelected(v)} disabled={alreadyApplied}
-                  className="w-full rounded-2xl border bg-card p-5 flex items-center gap-4 hover:shadow-md transition text-left disabled:opacity-50 disabled:cursor-not-allowed">
+                <button
+                  key={v.id}
+                  onClick={() => { if (!alreadyApplied) { setSelected(v); setUploadedFiles([]); } }}
+                  disabled={alreadyApplied}
+                  className="w-full rounded-2xl border bg-card p-5 flex items-center gap-4 hover:shadow-md transition text-left disabled:opacity-50 disabled:cursor-not-allowed"
+                >
                   <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
                     <Icon className="h-6 w-6 text-primary" />
                   </div>
@@ -143,8 +221,7 @@ export default function VerificationPage() {
                   </div>
                   {alreadyApplied
                     ? <CheckCircle2 className="h-5 w-5 text-emerald-500 shrink-0" />
-                    : <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0" />
-                  }
+                    : <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0" />}
                 </button>
               );
             })}
@@ -152,11 +229,15 @@ export default function VerificationPage() {
         </div>
       )}
 
-      {/* Submit form */}
       {selected && (
         <div className="rounded-2xl border bg-card p-6">
           <div className="flex items-center gap-3 mb-5">
-            <button onClick={() => setSelected(null)} className="text-sm text-muted-foreground hover:text-foreground">← Back</button>
+            <button
+              onClick={() => { setSelected(null); setUploadedFiles([]); }}
+              className="text-sm text-muted-foreground hover:text-foreground"
+            >
+              ← Back
+            </button>
             <div className="h-px flex-1 bg-border" />
           </div>
 
@@ -182,39 +263,63 @@ export default function VerificationPage() {
           </div>
 
           <div className="mb-5">
-            <p className="text-sm font-medium mb-3">Required Documents</p>
-            <div className="space-y-2">
-              {selected.docs.map((d) => (
-                <div key={d} className="border-2 border-dashed rounded-xl p-4 flex items-center gap-3 text-sm text-muted-foreground hover:border-primary/40 transition cursor-pointer">
-                  <Upload className="h-4 w-4 shrink-0" />
-                  <span>{d}</span>
-                </div>
+            <p className="text-sm font-medium mb-1">Required Documents</p>
+            <p className="text-xs text-muted-foreground mb-3">
+              Upload JPG, PNG, WebP, or PDF files (max 10 MB each).
+            </p>
+            <div className="space-y-3">
+              {selected.docs.map((d, i) => (
+                <FileDropZone
+                  key={d}
+                  label={d}
+                  files={uploadedFiles.filter((_, fi) => fi === i ? true : false).slice(0, 1)}
+                  onAdd={(f) => {
+                    setUploadedFiles((prev) => {
+                      const next = [...prev];
+                      next[i] = f;
+                      return next;
+                    });
+                  }}
+                  onRemove={() => {
+                    setUploadedFiles((prev) => {
+                      const next = [...prev];
+                      next.splice(i, 1);
+                      return next;
+                    });
+                  }}
+                />
               ))}
             </div>
+            {uploadedFiles.filter(Boolean).length > 0 && (
+              <p className="text-xs text-emerald-600 mt-2">
+                ✓ {uploadedFiles.filter(Boolean).length} file{uploadedFiles.filter(Boolean).length > 1 ? "s" : ""} ready to upload
+              </p>
+            )}
           </div>
 
-          {selected.id === "professional" && (
-            <div className="mb-5">
-              <label className="text-sm font-medium block mb-1.5">Certificate Number</label>
-              <input value={certNumber} onChange={(e) => setCertNumber(e.target.value)}
-                placeholder="e.g. COREN/2024/001234"
-                className="w-full rounded-xl border bg-background px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/20" />
-            </div>
-          )}
-
           <div className="flex gap-2">
-            <button onClick={() => setSelected(null)} className="flex-1 rounded-xl border py-2.5 text-sm font-medium">
+            <button
+              onClick={() => { setSelected(null); setUploadedFiles([]); }}
+              className="flex-1 rounded-xl border py-2.5 text-sm font-medium"
+            >
               Cancel
             </button>
             <button
-              onClick={() => submit.mutate({ type: selected.id, certNumber })}
+              onClick={handleSubmit}
               disabled={submit.isPending}
-              className="flex-1 rounded-xl bg-primary text-primary-foreground py-2.5 text-sm font-medium disabled:opacity-50 flex items-center justify-center gap-2">
-              {submit.isPending ? <><Loader2 className="h-4 w-4 animate-spin" /> Submitting…</> : <><FileText className="h-4 w-4" /> Submit Request</>}
+              className="flex-1 rounded-xl bg-primary text-primary-foreground py-2.5 text-sm font-medium disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              {submit.isPending
+                ? <><Loader2 className="h-4 w-4 animate-spin" /> Submitting…</>
+                : <><FileText className="h-4 w-4" /> Submit Request</>}
             </button>
           </div>
-          {submit.error && <p className="text-xs text-destructive mt-2">{(submit.error as Error).message}</p>}
-          {submit.isSuccess && <p className="text-xs text-emerald-600 mt-2">✓ Submitted! We'll review within 24-48 hours.</p>}
+          {submit.isError && (
+            <p className="text-xs text-destructive mt-2">{(submit.error as Error).message}</p>
+          )}
+          {submit.isSuccess && (
+            <p className="text-xs text-emerald-600 mt-2">✓ Submitted! We'll review within 24–48 hours.</p>
+          )}
         </div>
       )}
     </div>
