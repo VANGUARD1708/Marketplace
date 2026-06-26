@@ -36,6 +36,12 @@ import AdminPage from "@/pages/AdminPage";
 import AIPage from "@/pages/AIPage";
 import SearchPage from "@/pages/SearchPage";
 
+import CommunitiesPage from "@/pages/CommunitiesPage";
+import DeliveryPage from "@/pages/DeliveryPage";
+import GuardianPage from "@/pages/GuardianPage";
+import InvestmentPage from "@/pages/InvestmentPage";
+import RecommendationsPage from "@/pages/RecommendationsPage";
+
 import LoginPage from "@/pages/LoginPage";
 import RegisterPage from "@/pages/RegisterPage";
 
@@ -103,6 +109,12 @@ function Router() {
               <Route path="/admin" component={AdminPage} />
               <Route path="/ai" component={AIPage} />
               <Route path="/search" component={SearchPage} />
+
+              <Route path="/communities" component={CommunitiesPage} />
+              <Route path="/delivery" component={DeliveryPage} />
+              <Route path="/guardian" component={GuardianPage} />
+              <Route path="/invest" component={InvestmentPage} />
+              <Route path="/recommendations" component={RecommendationsPage} />
 
               <Route component={NotFound} />
             </Switch>
