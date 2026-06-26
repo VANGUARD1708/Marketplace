@@ -1,3 +1,5 @@
-- [Vanguard stack and conventions](vanguard-stack.md) — key tech decisions, port numbers, auth pattern, and module-by-module rule.
-- [API proxy setup](api-proxy.md) — Vite proxy routes /api to localhost:8080 in dev; frontend uses src/lib/api.ts for typed fetch with Bearer token.
-- [Misplaced file pattern](misplaced-files.md) — previous agents put React/JSX files under api-server/src/pages/; safe to delete that entire dir.
+- [SearchPage directory naming](searchpage-dir.md) — must be named `SearchPage` not `SearchPage.tsx`; Vite cannot resolve a directory with a `.tsx` extension via `@/pages/SearchPage` import.
+- [Notifications route](notifications-route.md) — server uses PATCH for mark-read (not POST), and requires `?userId=N` query param; read-all uses POST with body `{ userId }`.
+- [Auth routing pattern](auth-routing.md) — auth pages bypass AppLayout; wouter Switch with auth routes first, then catch-all Route wrapping AppLayout + inner Switch.
+- [AI assistant endpoint](ai-assistant.md) — `/ai/assistant` is a rule-based responder in `artifacts/api-server/src/routes/ai.ts`; no LLM integration yet.
+- [Admin stats/guardian endpoints](admin-endpoints.md) — `/admin/stats` aggregates count() from all tables; `/admin/guardian-alerts` returns empty array until DB guardian tables exist.

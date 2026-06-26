@@ -21,11 +21,13 @@ import {
   Menu,
   X,
   Plus,
+  Search,
 } from "lucide-react";
 
 const navItems = [
   { label: "Home", icon: Home, path: "/" },
   { label: "Feed", icon: Rss, path: "/feed" },
+  { label: "Search", icon: Search, path: "/search" },
   { label: "Profile", icon: User, path: "/profile" },
   { label: "Marketplace", icon: ShoppingBag, path: "/marketplace" },
   { label: "Services", icon: Wrench, path: "/services" },
@@ -61,11 +63,29 @@ export default function AppLayout({
           <Menu className="h-5 w-5" />
         </button>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-1">
           <Lock className="h-4 w-4 text-primary" />
           <span className="text-base font-bold text-sidebar-foreground tracking-tight">
             Vanguard
           </span>
+        </div>
+
+        <div className="flex items-center gap-1">
+          <Link href="/search">
+            <button className="p-2 rounded-md text-sidebar-foreground hover:bg-sidebar-accent transition-colors" aria-label="Search">
+              <Search className="h-5 w-5" />
+            </button>
+          </Link>
+          <Link href="/notifications">
+            <button className="p-2 rounded-md text-sidebar-foreground hover:bg-sidebar-accent transition-colors" aria-label="Notifications">
+              <Bell className="h-5 w-5" />
+            </button>
+          </Link>
+          <Link href="/profile">
+            <button className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center text-primary text-xs font-bold" aria-label="Profile">
+              U
+            </button>
+          </Link>
         </div>
       </header>
 

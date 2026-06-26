@@ -34,103 +34,81 @@ import VerificationPage from "@/pages/VerificationPage";
 import SettingsPage from "@/pages/SettingsPage";
 import AdminPage from "@/pages/AdminPage";
 import AIPage from "@/pages/AIPage";
+import SearchPage from "@/pages/SearchPage";
 
-const queryClient = new QueryClient();
+import LoginPage from "@/pages/LoginPage";
+import RegisterPage from "@/pages/RegisterPage";
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: { staleTime: 30_000, retry: 1, refetchOnWindowFocus: false },
+    mutations: { retry: 0 },
+  },
+});
+
+function AuthRoutes() {
+  return (
+    <Switch>
+      <Route path="/auth/login" component={LoginPage} />
+      <Route path="/auth/register" component={RegisterPage} />
+      <Route component={LoginPage} />
+    </Switch>
+  );
+}
 
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={HomePage} />
+      {/* Auth — no AppLayout wrapper */}
+      <Route path="/auth/login" component={LoginPage} />
+      <Route path="/auth/register" component={RegisterPage} />
 
-      <Route path="/feed" component={FeedPage} />
+      {/* Main app — wrapped in AppLayout */}
+      <Route>
+        {() => (
+          <AppLayout>
+            <Switch>
+              <Route path="/" component={HomePage} />
+              <Route path="/feed" component={FeedPage} />
 
-      <Route path="/profile" component={ProfilePage} />
-      <Route path="/profile/:id" component={ProfilePage} />
+              <Route path="/profile" component={ProfilePage} />
+              <Route path="/profile/:id" component={ProfilePage} />
 
-      <Route
-        path="/create-listing"
-        component={CreateListingPage}
-      />
+              <Route path="/create-listing" component={CreateListingPage} />
+              <Route path="/marketplace" component={MarketplacePage} />
+              <Route path="/marketplace/:id" component={ProductPage} />
 
-      <Route
-        path="/marketplace"
-        component={MarketplacePage}
-      />
+              <Route path="/services" component={ServicesPage} />
+              <Route path="/services/:id" component={ServicePage} />
 
-      <Route
-        path="/marketplace/:id"
-        component={ProductPage}
-      />
+              <Route path="/jobs" component={JobsPage} />
+              <Route path="/jobs/:id" component={JobPage} />
 
-      <Route
-        path="/services"
-        component={ServicesPage}
-      />
+              <Route path="/courses" component={CoursesPage} />
+              <Route path="/courses/:id" component={CoursePage} />
 
-      <Route
-        path="/services/:id"
-        component={ServicePage}
-      />
+              <Route path="/wallet" component={WalletPage} />
+              <Route path="/escrow" component={EscrowPage} />
 
-      <Route path="/jobs" component={JobsPage} />
-      <Route path="/jobs/:id" component={JobPage} />
+              <Route path="/chat" component={ChatPage} />
+              <Route path="/chat/:id" component={ChatPage} />
 
-      <Route
-        path="/courses"
-        component={CoursesPage}
-      />
+              <Route path="/notifications" component={NotificationsPage} />
 
-      <Route
-        path="/courses/:id"
-        component={CoursePage}
-      />
+              <Route path="/company" component={CompanyPage} />
+              <Route path="/company/:id" component={CompanyPage} />
 
-      <Route
-        path="/wallet"
-        component={WalletPage}
-      />
+              <Route path="/verification" component={VerificationPage} />
+              <Route path="/settings" component={SettingsPage} />
+              <Route path="/admin" component={AdminPage} />
+              <Route path="/ai" component={AIPage} />
+              <Route path="/search" component={SearchPage} />
 
-      <Route
-        path="/escrow"
-        component={EscrowPage}
-      />
-
-      <Route path="/chat" component={ChatPage} />
-      <Route path="/chat/:id" component={ChatPage} />
-
-      <Route
-        path="/notifications"
-        component={NotificationsPage}
-      />
-
-      <Route
-        path="/company"
-        component={CompanyPage}
-      />
-
-      <Route
-        path="/company/:id"
-        component={CompanyPage}
-      />
-
-      <Route
-        path="/verification"
-        component={VerificationPage}
-      />
-
-      <Route
-        path="/settings"
-        component={SettingsPage}
-      />
-
-      <Route
-        path="/admin"
-        component={AdminPage}
-      />
-
-      <Route path="/ai" component={AIPage} />
-
-      <Route component={NotFound} />
+              <Route component={NotFound} />
+            </Switch>
+          </AppLayout>
+        )}
+      </Route>
     </Switch>
   );
 }
@@ -139,17 +117,9 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <WouterRouter
-          base={import.meta.env.BASE_URL.replace(
-            /\/$/,
-            "",
-          )}
-        >
-          <AppLayout>
-            <Router />
-          </AppLayout>
+        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+          <Router />
         </WouterRouter>
-
         <Toaster />
       </TooltipProvider>
     </QueryClientProvider>

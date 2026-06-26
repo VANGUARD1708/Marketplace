@@ -122,4 +122,36 @@ router.patch("/disputes/:id", async (req, res) => {
   }
 });
 
+router.get("/stats", async (_req, res) => {
+  try {
+    const [[users], [listings], [escrows], [disputes], [verifications], [reports]] = await Promise.all([
+      db.select({ count: count() }).from(usersTable),
+      db.select({ count: count() }).from(listingsTable),
+      db.select({ count: count() }).from(escrowsTable),
+      db.select({ count: count() }).from(disputesTable),
+      db.select({ count: count() }).from(verificationRequestsTable),
+      db.select({ count: count() }).from(adminReportsTable),
+    ]);
+    return res.json({
+      users: users?.count ?? 0,
+      listings: listings?.count ?? 0,
+      escrows: escrows?.count ?? 0,
+      disputes: disputes?.count ?? 0,
+      verifications: verifications?.count ?? 0,
+      reports: reports?.count ?? 0,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Failed to load stats" });
+  }
+});
+
+router.get("/guardian-alerts", (_req, res) => {
+  return res.json([]);
+});
+
+router.post("/guardian-alerts/:id/resolve", (_req, res) => {
+  return res.json({ success: true });
+});
+
 export default router;
