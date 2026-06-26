@@ -1,0 +1,392 @@
+# VANGUARD – MASTER APPLICATION BLUEPRINT
+
+## Vision
+
+Vanguard is an AI-powered trusted marketplace and business ecosystem where users can:
+
+- Buy and sell products
+- Offer and hire services
+- Find jobs and recruit talent
+- Build and manage companies
+- Learn and teach through courses
+- Invest in opportunities
+- Use escrow-protected transactions
+- Build trust and reputation
+- Receive AI assistance and fraud protection
+
+---
+
+# Core Modules
+
+## Marketplace
+
+- Product listings
+- Categories
+- Listing images
+- Saved listings
+- Search
+- Filters
+- AI recommendations
+- Price negotiation
+- Offers
+- Wishlist
+- Marketplace feed
+
+---
+
+## Wallet
+
+- Wallet balance
+- Deposits
+- Withdrawals
+- Transfers
+- Transaction history
+- Multi-currency support
+- Payment providers
+- Refunds
+- Payouts
+
+---
+
+## Escrow
+
+- Escrow creation
+- Fund locking
+- Delivery confirmation
+- Release funds
+- Refunds
+- Disputes
+- Evidence upload
+- Escrow timeline
+
+---
+
+## Trust System
+
+- Trust scores
+- Trust history
+- Reviews
+- Ratings
+- Verification
+- Badges
+- Fraud detection
+- Reputation engine
+
+---
+
+## Guardian AI
+
+- Listing analysis
+- Scam detection
+- Risk analysis
+- Company analysis
+- Transaction monitoring
+- Escrow monitoring
+- Review moderation
+- Fraud alerts
+- AI recommendations
+
+---
+
+## Companies
+
+- Company profiles
+- Company members
+- Departments
+- Company verification
+- Team management
+- Business pages
+
+---
+
+## Services
+
+- Service listings
+- Categories
+- Pricing
+- Availability
+- Booking
+- Reviews
+
+---
+
+## Jobs
+
+- Job listings
+- Applications
+- Recruitment
+- Employer dashboard
+- Candidate dashboard
+
+---
+
+## Courses
+
+- Courses
+- Lessons
+- Enrollments
+- Certificates
+- Progress tracking
+
+---
+
+## Investments
+
+- Investment projects
+- Investor dashboard
+- Funding goals
+- Returns
+- Portfolio
+- Analytics
+
+---
+
+## Opportunities
+
+- Grants
+- Scholarships
+- Competitions
+- Internships
+- Government programs
+- Startup funding
+
+---
+
+## Social
+
+- Profiles
+- Followers
+- Posts
+- Messaging
+- Notifications
+- Activity feed
+
+---
+
+## AI Assistant
+
+Vanguard Assistant can:
+
+- Recommend products
+- Recommend investments
+- Detect scams
+- Explain listings
+- Help negotiate
+- Suggest opportunities
+- Answer questions
+- Help complete tasks
+
+---
+
+# Admin System
+
+## Super Admin
+
+- Full platform control
+- Create admins
+- Assign permissions
+- Manage modules
+- Platform analytics
+- Security controls
+
+## Admin Roles
+
+- Marketplace Admin
+- Wallet Admin
+- Escrow Admin
+- Guardian Admin
+- Verification Admin
+- Company Admin
+- Course Admin
+- Jobs Admin
+- Analytics Admin
+- Support Admin
+
+---
+
+# Backend Architecture
+
+PostgreSQL
+
+↓
+
+Drizzle ORM
+
+↓
+
+Repositories
+
+↓
+
+Services
+
+↓
+
+Express Routes
+
+↓
+
+React Query
+
+↓
+
+Frontend
+
+---
+
+# Database Modules
+
+- Users
+- Profiles
+- Roles
+- Permissions
+- Companies
+- Company Members
+- Listings
+- Listing Images
+- Wallets
+- Transactions
+- Orders
+- Escrows
+- Disputes
+- Reviews
+- Trust Scores
+- Trust History
+- Guardian Alerts
+- Fraud Cases
+- Risk Assessments
+- Recommendations
+- Notifications
+- Messages
+- Followers
+- Posts
+- Courses
+- Lessons
+- Enrollments
+- Jobs
+- Applications
+- Services
+- Investments
+- Opportunities
+- Verification Requests
+- Analytics
+
+---
+
+# Backend Layers
+
+Repositories
+
+- Database access
+
+Services
+
+- Business logic
+
+Routes
+
+- API endpoints
+
+Middlewares
+
+- Authentication
+- Authorization
+- Validation
+- Permissions
+- Rate limiting
+- Error handling
+
+Jobs
+
+- Analytics
+- Guardian monitoring
+- Escrow monitoring
+- Trust recalculation
+- Notifications
+
+AI
+
+- Recommendation Engine
+- Guardian
+- Trust Engine
+- Fraud Detection
+- Risk Analysis
+- Company Analyzer
+- Listing Analyzer
+
+---
+
+# Frontend
+
+Pages
+
+- Home
+- Marketplace
+- Product
+- Wallet
+- Escrow
+- Chat
+- Notifications
+- Profile
+- Companies
+- Services
+- Jobs
+- Courses
+- Investments
+- Opportunities
+- Guardian
+- Analytics
+- Admin
+- Super Admin
+
+Components
+
+- Cards
+- Tables
+- Charts
+- AI Widgets
+- Filters
+- Search
+- Forms
+- Dialogs
+- Dashboards
+
+---
+
+# Payment Integration
+
+- Flutterwave
+- Paystack
+- Bank Transfer
+- Escrow Wallet
+
+---
+
+# Security
+
+- JWT
+- Argon2
+- OTP
+- Email Verification
+- Phone Verification
+- KYC
+- Device Sessions
+- Audit Logs
+
+---
+
+# Deployment
+
+- Replit
+- PostgreSQL
+- Drizzle ORM
+- Express
+- React
+- TypeScript
+- Tailwind CSS
+
+---
+
+# Long-Term Goal
+
+Create one trusted platform where individuals, professionals, businesses, companies, students, investors, employers, and service providers can interact securely with AI assistance, escrow protection, reputation systems, and business tools—all within a single ecosystem.
