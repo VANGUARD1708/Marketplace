@@ -41,6 +41,8 @@ import DeliveryPage from "@/pages/DeliveryPage";
 import GuardianPage from "@/pages/GuardianPage";
 import InvestmentPage from "@/pages/InvestmentPage";
 import RecommendationsPage from "@/pages/RecommendationsPage";
+import OpportunitiesPage from "@/pages/opportunitiesPage";
+import { AuthProvider } from "@/context/AuthContext";
 
 import LoginPage from "@/pages/LoginPage";
 import RegisterPage from "@/pages/RegisterPage";
@@ -114,6 +116,7 @@ function Router() {
               <Route path="/delivery" component={DeliveryPage} />
               <Route path="/guardian" component={GuardianPage} />
               <Route path="/invest" component={InvestmentPage} />
+              <Route path="/opportunities" component={OpportunitiesPage} />
               <Route path="/recommendations" component={RecommendationsPage} />
 
               <Route component={NotFound} />
@@ -128,12 +131,14 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-          <Router />
-        </WouterRouter>
-        <Toaster />
-      </TooltipProvider>
+      <AuthProvider>
+        <TooltipProvider>
+          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+            <Router />
+          </WouterRouter>
+          <Toaster />
+        </TooltipProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

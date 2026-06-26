@@ -22,6 +22,8 @@ import analyticsRouter from "./analytics";
 import settingsRouter from "./settings";
 import ordersRouter from "./orders";
 import disputeRouter from "./dispute";
+import investmentsRouter from "./investments";
+import opportunitiesRouter from "./opportunities";
 
 const router: IRouter = Router();
 
@@ -48,5 +50,7 @@ router.use("/analytics", analyticsRouter);
 router.use("/settings", settingsRouter);
 router.use("/orders", ordersRouter);
 router.use("/disputes", disputeRouter);
+router.use("/investments", investmentsRouter);
+router.use("/opportunities", opportunitiesRouter);
 
 export default router;

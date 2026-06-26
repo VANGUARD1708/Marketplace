@@ -62,3 +62,9 @@ export * from "./guardian_alerts";
 export * from "./risk_assesments";
 export * from "./fraud_cases";
 export * from "./guardian_actions";
+
+/* Investments */
+export * from "./investments";
+
+/* Opportunities */
+export * from "./opportunities";

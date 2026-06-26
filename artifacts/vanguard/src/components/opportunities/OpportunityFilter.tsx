@@ -4,6 +4,7 @@ import {
   MapPin,
   ShieldCheck,
   SlidersHorizontal,
+  CalendarClock,
 } from "lucide-react";
 
 export interface OpportunityFiltersValue {
@@ -12,6 +13,7 @@ export interface OpportunityFiltersValue {
   location: string;
   verifiedOnly: boolean;
   guardianOnly: boolean;
+  deadlineWindow: "" | "7d" | "30d" | "90d";
 }
 
 interface OpportunityFiltersProps {
@@ -123,6 +125,24 @@ export default function OpportunityFilters({
           )}
         </select>
 
+      </div>
+
+      <div className="mt-3">
+        <label className="text-xs font-medium text-muted-foreground mb-1.5 flex items-center gap-1.5">
+          <CalendarClock className="h-3.5 w-3.5" /> Closing deadline
+        </label>
+        <select
+          value={value.deadlineWindow}
+          onChange={(e) =>
+            update("deadlineWindow", e.target.value as OpportunityFiltersValue["deadlineWindow"])
+          }
+          className="rounded-xl border px-3 py-2.5 w-full text-sm"
+        >
+          <option value="">Any time</option>
+          <option value="7d">Closing in 7 days</option>
+          <option value="30d">Closing in 30 days</option>
+          <option value="90d">Closing in 90 days</option>
+        </select>
       </div>
 
       <button
